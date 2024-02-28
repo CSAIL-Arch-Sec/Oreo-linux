@@ -1,0 +1,12 @@
+version: "3"
+services:
+  x86_fs:
+    image: shixins/x86_fs_new:x86_fs_new
+    build: .
+    volumes:
+      - .:/root/linux
+      - ../gem5-new/:/root/gem5
+      - ../experiments/:/root/experiments
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    privileged: true

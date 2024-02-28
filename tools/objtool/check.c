@@ -4725,13 +4725,13 @@ static int validate_pie(struct objtool_file *file)
 	int warnings = 0;
 
 	for_each_sec(file, sec) {
-		if (!sec->reloc)
+		if (!sec->rsec)
 			continue;
 		if (!(sec->sh.sh_flags & SHF_ALLOC))
 			continue;
 
-		list_for_each_entry(reloc, &sec->reloc->reloc_list, list) {
-			switch (reloc->type) {
+		for_each_reloc(sec->rsec, reloc) {
+			switch (reloc_type(reloc)) {
 			case R_X86_64_NONE:
 			case R_X86_64_PC32:
 			case R_X86_64_PLT32:
@@ -4741,10 +4741,10 @@ static int validate_pie(struct objtool_file *file)
 				break;
 			case R_X86_64_32:
 			case R_X86_64_32S:
-				insn = find_insn_containing(file, sec, reloc->offset);
+				insn = find_insn_containing(file, sec, reloc_offset(reloc));
 				if (!insn) {
 					WARN("can't find relocate insn near %s+0x%lx",
-					     sec->name, reloc->offset);
+					     sec->name, reloc_offset(reloc));
 				} else {
 					if (is_in_pvh_code(insn))
 						break;
@@ -4755,7 +4755,7 @@ static int validate_pie(struct objtool_file *file)
 				break;
 			default:
 				WARN("unexpected relocation type %d at %s+0x%lx",
-				     reloc->type, sec->name, reloc->offset);
+				     reloc_type(reloc), sec->name, reloc_offset(reloc));
 				warnings++;
 				break;
 			}

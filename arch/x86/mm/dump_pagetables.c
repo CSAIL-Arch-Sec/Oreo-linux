@@ -17,6 +17,7 @@
 #include <linux/highmem.h>
 #include <linux/pci.h>
 #include <linux/ptdump.h>
+#include <linux/sort.h>
 
 #include <asm/e820/types.h>
 
@@ -101,10 +102,10 @@ static struct addr_marker address_markers[] = {
 #ifdef CONFIG_EFI
 	[EFI_END_NR]		= { EFI_VA_END,		"EFI Runtime Services" },
 #endif
-	[HIGH_KERNEL_NR]	= { __START_KERNEL_map,	"High Kernel Mapping" },
-	[MODULES_VADDR_NR]	= { MODULES_VADDR,	"Modules" },
-	[MODULES_END_NR]	= { MODULES_END,	"End Modules" },
-	[FIXADDR_START_NR]	= { FIXADDR_START,	"Fixmap Area" },
+	[HIGH_KERNEL_NR]	= { 0UL,		"High Kernel Mapping" },
+	[MODULES_VADDR_NR]	= { 0UL,		"Modules" },
+	[MODULES_END_NR]	= { 0UL,		"End Modules" },
+	[FIXADDR_START_NR]	= { 0UL,		"Fixmap Area" },
 	[END_OF_SPACE_NR]	= { -1,			NULL }
 };
 
@@ -436,6 +437,27 @@ void ptdump_walk_pgd_level_checkwx(void)
 	ptdump_walk_pgd_level_core(NULL, &init_mm, INIT_PGD, true, false);
 }
 
+#ifdef CONFIG_X86_PIE
+static int __init address_markers_sort_cmp(const void *pa, const void *pb)
+{
+	struct addr_marker *a = (struct addr_marker *)pa;
+	struct addr_marker *b = (struct addr_marker *)pb;
+
+	return (a->start_address > b->start_address) -
+	       (a->start_address < b->start_address);
+}
+
+static void __init address_markers_sort(void)
+{
+	sort(&address_markers[0], ARRAY_SIZE(address_markers), sizeof(address_markers[0]),
+	     address_markers_sort_cmp, NULL);
+}
+#else
+static void __init address_markers_sort(void)
+{
+}
+#endif
+
 static int __init pt_dump_init(void)
 {
 	/*
@@ -453,6 +475,10 @@ static int __init pt_dump_init(void)
 	address_markers[KASAN_SHADOW_START_NR].start_address = KASAN_SHADOW_START;
 	address_markers[KASAN_SHADOW_END_NR].start_address = KASAN_SHADOW_END;
 #endif
+	address_markers[HIGH_KERNEL_NR].start_address = KERNEL_MAP_BASE;
+	address_markers[MODULES_VADDR_NR].start_address = MODULES_VADDR;
+	address_markers[MODULES_END_NR].start_address = MODULES_END;
+	address_markers[FIXADDR_START_NR].start_address = FIXADDR_START;
 #endif
 #ifdef CONFIG_X86_32
 	address_markers[VMALLOC_START_NR].start_address = VMALLOC_START;
@@ -466,6 +492,8 @@ static int __init pt_dump_init(void)
 	address_markers[LDT_NR].start_address = LDT_BASE_ADDR;
 # endif
 #endif
+	address_markers_sort();
+
 	return 0;
 }
 __initcall(pt_dump_init);

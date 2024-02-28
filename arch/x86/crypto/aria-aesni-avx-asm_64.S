@@ -1033,7 +1033,7 @@ SYM_FUNC_START_LOCAL(__aria_aesni_avx_ctr_gen_keystream_16way)
 	/* load IV and byteswap */
 	vmovdqu (%r8), %xmm8;
 
-	vmovdqa .Lbswap128_mask (%rip), %xmm1;
+	vmovdqa .Lbswap128_mask(%rip), %xmm1;
 	vpshufb %xmm1, %xmm8, %xmm3; /* be => le */
 
 	vpcmpeqd %xmm0, %xmm0, %xmm0;

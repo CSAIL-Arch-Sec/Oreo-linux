@@ -23,13 +23,13 @@
  * covered fully.
  */
 #ifndef CONFIG_DEBUG_KMAP_LOCAL_FORCE_MAP
-# define FIXMAP_PMD_NUM	2
+# define FIXMAP_PMD_NUM	1
 #else
 # define KM_PMDS	(KM_MAX_IDX * ((CONFIG_NR_CPUS + 511) / 512))
-# define FIXMAP_PMD_NUM (KM_PMDS + 2)
+# define FIXMAP_PMD_NUM (KM_PMDS + 1)
 #endif
-/* fixmap starts downwards from the 507th entry in level2_fixmap_pgt */
-#define FIXMAP_PMD_TOP	507
+/* fixmap starts downwards from the 506th entry in level2_fixmap_pgt */
+#define FIXMAP_PMD_TOP	506
 
 #ifndef __ASSEMBLY__
 #include <linux/kernel.h>
@@ -38,26 +38,10 @@
 #include <asm/pgtable_types.h>
 #ifdef CONFIG_X86_32
 #include <linux/threads.h>
-#else
-#include <uapi/asm/vsyscall.h>
 #endif
 
-/*
- * We can't declare FIXADDR_TOP as variable for x86_64 because vsyscall
- * uses fixmaps that relies on FIXADDR_TOP for proper address calculation.
- * Because of this, FIXADDR_TOP x86 integration was left as later work.
- */
-#ifdef CONFIG_X86_32
-/*
- * Leave one empty page between vmalloc'ed areas and
- * the start of the fixmap.
- */
 extern unsigned long __FIXADDR_TOP;
 #define FIXADDR_TOP	((unsigned long)__FIXADDR_TOP)
-#else
-#define FIXADDR_TOP	(round_up(VSYSCALL_ADDR + PAGE_SIZE, 1<<PMD_SHIFT) - \
-			 PAGE_SIZE)
-#endif
 
 /*
  * Here we define all the compile-time 'special' virtual
@@ -81,10 +65,6 @@ extern unsigned long __FIXADDR_TOP;
 enum fixed_addresses {
 #ifdef CONFIG_X86_32
 	FIX_HOLE,
-#else
-#ifdef CONFIG_X86_VSYSCALL_EMULATION
-	VSYSCALL_PAGE = (FIXADDR_TOP - VSYSCALL_ADDR) >> PAGE_SHIFT,
-#endif
 #endif
 	FIX_DBGP_BASE,
 	FIX_EARLYCON_MEM_BASE,

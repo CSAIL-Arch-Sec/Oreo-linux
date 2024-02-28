@@ -38,7 +38,7 @@ config X86_64
 
 config FORCE_DYNAMIC_FTRACE
 	def_bool y
-	depends on X86_32
+	depends on X86_32 || X86_PIE
 	depends on FUNCTION_TRACER
 	select DYNAMIC_FTRACE
 	help
@@ -410,12 +410,25 @@ config PGTABLE_LEVELS
 
 config CC_HAS_SANE_STACKPROTECTOR
 	bool
+	default CC_HAS_CUSTOMIZED_STACKPROTECTOR if X86_PIE
 	default $(success,$(srctree)/scripts/gcc-x86_64-has-stack-protector.sh $(CC) $(CLANG_FLAGS)) if 64BIT
 	default $(success,$(srctree)/scripts/gcc-x86_32-has-stack-protector.sh $(CC) $(CLANG_FLAGS))
 	help
 	  We have to make sure stack protector is unconditionally disabled if
 	  the compiler produces broken code or if it does not let us control
 	  the segment on 32-bit kernels.
+
+config CC_HAS_CUSTOMIZED_STACKPROTECTOR
+	bool
+	# Although clang supports -mstack-protector-guard-reg option, it
+	# would generate GOT reference for __stack_chk_guard even with
+	# -fno-PIE flag.
+	default y if (!CC_IS_CLANG && $(cc-option,-mstack-protector-guard-reg=gs))
+
+config STACKPROTECTOR_FIXED
+	bool
+	depends on X86_64 && STACKPROTECTOR
+	default !CC_HAS_CUSTOMIZED_STACKPROTECTOR
 
 menu "Processor type and features"
 
@@ -2120,6 +2133,16 @@ config RELOCATABLE
 	  it has been loaded at and the compile time physical address
 	  (CONFIG_PHYSICAL_START) is used as the minimum location.
 
+config X86_PIE
+	bool "Build a PIE kernel"
+	default n
+	depends on X86_64 && !XEN
+	select OBJTOOL if HAVE_OBJTOOL
+    select DYNAMIC_FTRACE if FUNCTION_TRACER && RETPOLINE
+    help
+      This builds a PIE kernel image that could be put at any
+      virtual address.
+
 config RANDOMIZE_BASE
 	bool "Randomize the address of the kernel image (KASLR)"
 	depends on RELOCATABLE
@@ -2152,6 +2175,17 @@ config RANDOMIZE_BASE
 	  minimum of 2MB. As a result, only 10 bits of entropy are
 	  theoretically possible, but the implementations are further
 	  limited due to memory layouts.
+
+	  If unsure, say Y.
+
+config EXTENDED_RANDOMIZE_BASE
+	bool "Randomize the address of the kernel image (PIE)"
+	default y
+	depends on X86_PIE && RANDOMIZE_BASE
+	help
+	  This packs kernel image, module area and fixmap area as a
+	  whole, and allows it to be randomized in top 512G of virtual
+	  address space when PIE is enabled.
 
 	  If unsure, say Y.
 
@@ -2487,7 +2521,7 @@ config CPU_UNRET_ENTRY
 
 config CALL_DEPTH_TRACKING
 	bool "Mitigate RSB underflow with call depth tracking"
-	depends on CPU_SUP_INTEL && HAVE_CALL_THUNKS
+	depends on CPU_SUP_INTEL && HAVE_CALL_THUNKS && !X86_PIE
 	select HAVE_DYNAMIC_FTRACE_NO_PATCHABLE
 	select CALL_THUNKS
 	default y

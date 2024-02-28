@@ -35,7 +35,6 @@
 
 #include <asm/vsyscall.h>
 #include <asm/unistd.h>
-#include <asm/fixmap.h>
 #include <asm/traps.h>
 #include <asm/paravirt.h>
 
@@ -385,14 +384,10 @@ void __init map_vsyscall(void)
 	 * page.
 	 */
 	if (vsyscall_mode == EMULATE) {
-		__set_fixmap(VSYSCALL_PAGE, physaddr_vsyscall,
-			     PAGE_KERNEL_VVAR);
+		__set_vsyscall_page(physaddr_vsyscall, PAGE_KERNEL_VVAR);
 		set_vsyscall_pgtable_user_bits(swapper_pg_dir);
 	}
 
 	if (vsyscall_mode == XONLY)
 		vm_flags_init(&gate_vma, VM_EXEC);
-
-	BUILD_BUG_ON((unsigned long)__fix_to_virt(VSYSCALL_PAGE) !=
-		     (unsigned long)VSYSCALL_ADDR);
 }

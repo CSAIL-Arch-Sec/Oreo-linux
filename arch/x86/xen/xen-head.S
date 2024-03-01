@@ -58,9 +58,9 @@ SYM_CODE_START(startup_xen)
 	 */
 	movl	$MSR_GS_BASE,%ecx
 #if defined(CONFIG_STACKPROTECTOR_FIXED)
-	leaq	INIT_PER_CPU_VAR(fixed_percpu_data)(%rip), %rdx
+	leaq	INIT_PER_CPU_VAR(fixed_percpu_data)(%rip), %rax
 #elif defined(CONFIG_SMP)
-	movabs	$__per_cpu_load, %rdx
+	movabs	$__per_cpu_load, %rax
 #else
 	xorl	%eax, %eax
 #endif

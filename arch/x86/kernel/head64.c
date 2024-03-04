@@ -252,7 +252,7 @@ unsigned long __head __startup_64(unsigned long physaddr,
 		i = pud_index(text_base);
 		pgtable_flags = _KERNPG_TABLE_NOENC - __START_KERNEL_map + load_delta;
 		pud[i] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt);
-		pud[i + 1] = pgtable_flags + SYM_ABS_VAL(level2_fixmap_pgt);
+		pud[511] = pgtable_flags + SYM_ABS_VAL(level2_fixmap_pgt);
 	} else {
 		pud[510] += load_delta;
 		pud[511] += load_delta;
@@ -262,7 +262,7 @@ unsigned long __head __startup_64(unsigned long physaddr,
 	kernel_map_base_offset = text_base & PUD_MASK;
 	*fixup_long(&kernel_map_base, physaddr) = kernel_map_base_offset;
 	kernel_map_base_offset -= __START_KERNEL_map;
-	*fixup_long(&__FIXADDR_TOP, physaddr) += kernel_map_base_offset;
+//	*fixup_long(&__FIXADDR_TOP, physaddr) += kernel_map_base_offset;
 #endif
 
 	pmd = fixup_pointer(level2_fixmap_pgt, physaddr);

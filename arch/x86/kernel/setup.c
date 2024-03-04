@@ -886,6 +886,12 @@ void __init setup_arch(char **cmdline_p)
 	boot_cpu_data.x86_phys_bits = MAX_PHYSMEM_BITS;
 #endif
 
+	printk(KERN_INFO"@@@ _text = %lx, _end = %lx\n", (unsigned long) _text, (unsigned long) _end);
+#ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH
+	printk(KERN_INFO"@@@ delta = %lx\n", gem5_kaslr_get_delta((unsigned long) _text));
+#endif
+	printk(KERN_INFO"@@@ FIXADDR_START = %lx, __FIXADDR_TOP = %lx\n", (unsigned long) FIXADDR_START, (unsigned long) __FIXADDR_TOP);
+
 	/*
 	 * If we have OLPC OFW, we might end up relocating the fixmap due to
 	 * reserve_top(), so do this before touching the ioremap area.

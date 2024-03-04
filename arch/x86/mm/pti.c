@@ -557,9 +557,17 @@ static void pti_clone_kernel_text(void)
 	 * readable on the filesystem or on the web.  But, do not
 	 * clone the areas past rodata, they might contain secrets.
 	 */
+#ifdef CONFIG_GEM5_KASLR_PROTECTION
+	// [Shixin] In our defense, use derandomized address to operate on page table
+	// TODO: Double check when we need this and whether this is correct
+	unsigned long start = PFN_ALIGN(gem5_kaslr_remove_rand_offset(_text));
+	unsigned long end_clone  = (unsigned long)gem5_kaslr_remove_rand_offset(__end_rodata_aligned);
+	unsigned long end_global = PFN_ALIGN((unsigned long)gem5_kaslr_remove_rand_offset(_etext));
+#else
 	unsigned long start = PFN_ALIGN(_text);
 	unsigned long end_clone  = (unsigned long)__end_rodata_aligned;
 	unsigned long end_global = PFN_ALIGN((unsigned long)_etext);
+#endif
 
 	if (!pti_kernel_image_global_ok())
 		return;

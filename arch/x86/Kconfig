@@ -3025,3 +3025,61 @@ config HAVE_ATOMIC_IOMAP
 source "arch/x86/kvm/Kconfig"
 
 source "arch/x86/Kconfig.assembler"
+
+config GEM5_KASLR_PROTECTION_HIGH
+	bool "gem5 simulation: enable KASLR protection"
+	depends on X86_PIE || EXTENDED_RANDOMIZE_BASE
+	default n
+	help
+	  [Shixin] This enables protecting (part of) kernel text ASLR offset from leaked from page table contents.
+
+config GEM5_KASLR_MAX_BIT
+    int "gem5 simulation: maximum bits to be randomized"
+    depends on GEM5_KASLR_PROTECTION_HIGH
+    default 30
+    help
+      [Shixin] This value puts the maximum bits to be randomized of kernel text address.
+
+config GEM5_KASLR_ALIGN_BIT
+    int "gem5 simulation: Alignment bits to which protected kernel text ASLR offset should be aligned"
+    depends on GEM5_KASLR_PROTECTION_HIGH
+    default 30
+    help
+      [Shixin] This value puts the alignment restrictions on kernel text ASLR offset protected by our defense.
+
+config GEM5_KASLR_MODULE_PROTECTION_HIGH
+	bool "gem5 simulation: enable KASLR protection for kernel modules"
+	depends on X86_PIE || EXTENDED_RANDOMIZE_BASE
+	default n
+	help
+	  [Shixin] This enables protecting (part of) kernel module ASLR offset from leaked from page table contents.
+
+config GEM5_KASLR_MODULE_MAX_BIT
+    int "gem5 simulation: maximum bits to be randomized"
+    depends on GEM5_KASLR_MODULE_PROTECTION_HIGH
+    default 30
+    help
+      [Shixin] This value puts the maximum bits to be randomized of kernel module address.
+
+config GEM5_KASLR_MODULE_ALIGN_BIT
+    int "gem5 simulation: Alignment bits to which kernel virtual address should be aligned"
+    depends on GEM5_KASLR_MODULE_PROTECTION_HIGH
+    default 30
+    help
+      [Shixin] This value puts the alignment restrictions on kernel module ASLR offset protected by our defense.
+
+config GEM5_KASLR_MODULE_DELTA
+	hex "gem5 simulation: KALSR module delta"
+	default 0
+	range 0 31
+	help
+	  [Shixin] This value set KASLR random delta for kernel modules when emulating KASLR in gem5.
+
+config GEM5_KASLR_MODULE_FINE_GRAINED
+	bool "gem5 simulation: use different KASLR delta for different kernel modules"
+	depends on GEM5_KASLR_MODULE_PROTECTION_HIGH
+	default n
+	help
+	  [Shixin] This enables randomizing the kernel virtual addresses of different modules with
+	  different offsets.
+

@@ -245,13 +245,20 @@ unsigned long __head __startup_64(unsigned long physaddr,
 	}
 
 	pud = fixup_pointer(&level3_kernel_pgt, physaddr);
+	// TODO: Add kernel text aslr defense here!
+	// pud[0] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt) + (delta << unused_bit_offset);
+	// pud[511 or 1] = pgtable_flags + SYM_ABS_VAL(level2_fixmap_pgt) + (delta << unused_bit_offset);
 	if (IS_ENABLED(CONFIG_X86_PIE)) {
 		pud[510] = 0;
 		pud[511] = 0;
 
 		i = pud_index(text_base);
 		pgtable_flags = _KERNPG_TABLE_NOENC - __START_KERNEL_map + load_delta;
+#ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH
+		pud[0] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt);
+#else
 		pud[i] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt);
+#endif
 		pud[511] = pgtable_flags + SYM_ABS_VAL(level2_fixmap_pgt);
 	} else {
 		pud[510] += load_delta;
@@ -339,10 +346,15 @@ unsigned long __head __startup_64(unsigned long physaddr,
 		pmd[i] &= ~_PAGE_PRESENT;
 
 	/* fixup pages that are part of the kernel image */
+#ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH
+	for (; i <= pmd_index(end_base); i++)
+		if (pmd[i] & _PAGE_PRESENT)
+			pmd[i] += load_delta + kernel_map_base_offset + gem5_kaslr_get_delta_pte(gem5_kaslr_get_delta(text_base));
+#else
 	for (; i <= pmd_index(end_base); i++)
 		if (pmd[i] & _PAGE_PRESENT)
 			pmd[i] += load_delta + kernel_map_base_offset;
-
+#endif
 	/* invalidate pages after the kernel image */
 	for (; i < PTRS_PER_PMD; i++)
 		pmd[i] &= ~_PAGE_PRESENT;

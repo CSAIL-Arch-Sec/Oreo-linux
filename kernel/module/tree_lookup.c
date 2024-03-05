@@ -23,7 +23,8 @@ static __always_inline unsigned long __mod_tree_val(struct latch_tree_node *n)
 {
 	struct module_memory *mod_mem = container_of(n, struct module_memory, mtn.node);
 
-	return (unsigned long)mod_mem->base;
+	// [Shixin]
+	return gem5_kaslr_mask((unsigned long)mod_mem->base);
 }
 
 static __always_inline unsigned long __mod_tree_size(struct latch_tree_node *n)

@@ -95,7 +95,8 @@ struct symsearch {
 static void __mod_update_bounds(enum mod_mem_type type __maybe_unused, void *base,
 				unsigned int size, struct mod_tree_root *tree)
 {
-	unsigned long min = (unsigned long)base;
+	// [Shixin]
+	unsigned long min = gem5_kaslr_mask((unsigned long)base);
 	unsigned long max = min + size;
 
 #ifdef CONFIG_ARCH_WANTS_MODULES_DATA_IN_VMALLOC
@@ -3271,8 +3272,15 @@ struct module *__module_address(unsigned long addr)
 {
 	struct module *mod;
 
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] module_addr_min and module_addr_max are masked
+	unsigned long masked_addr = gem5_kaslr_mask(addr);
+	if (masked_addr >= mod_tree.addr_min && masked_addr <= mod_tree.addr_max)
+		goto lookup;
+#else
 	if (addr >= mod_tree.addr_min && addr <= mod_tree.addr_max)
 		goto lookup;
+#endif
 
 #ifdef CONFIG_ARCH_WANTS_MODULES_DATA_IN_VMALLOC
 	if (addr >= mod_tree.data_addr_min && addr <= mod_tree.data_addr_max)
@@ -3284,7 +3292,16 @@ struct module *__module_address(unsigned long addr)
 lookup:
 	module_assert_mutex_or_preempt();
 
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	mod = mod_find(masked_addr, &mod_tree);
+	// [Shixin] Check delta after if find a mod
+	// TODO: Is this safe? This contains some secret-dependent check.
+	if (mod && !within_module(addr, mod)) {
+		mod = NULL;
+	}
+#else
 	mod = mod_find(addr, &mod_tree);
+#endif
 	if (mod) {
 		BUG_ON(!within_module(addr, mod));
 		if (mod->state == MODULE_STATE_UNFORMED)

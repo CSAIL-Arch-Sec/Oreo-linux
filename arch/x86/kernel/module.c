@@ -73,6 +73,29 @@ void *module_alloc(unsigned long size)
 	if (PAGE_ALIGN(size) > MODULES_LEN)
 		return NULL;
 
+	// TODO: Add protection here!
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+
+#ifdef CONFIG_GEM5_KASLR_MODULE_FINE_GRAINED
+	uint64_t module_delta = get_random_u32_inclusive(0, 511);
+#else
+	uint64_t module_delta = CONFIG_GEM5_KASLR_MODULE_DELTA;
+#endif
+	void *masked_p = __vmalloc_node_range(size, MODULE_ALIGN,
+				 MODULES_VADDR,
+			         MODULES_VADDR + (1 << CONFIG_GEM5_KASLR_MODULE_ALIGN_BIT),
+			         gfp_mask,
+			         __pgprot(PAGE_KERNEL.pgprot | gem5_kaslr_get_delta_pte(module_delta)),
+				 VM_FLUSH_RESET_PERMS | VM_DEFER_KMEMLEAK,
+				 NUMA_NO_NODE, __builtin_return_address(0));
+
+	p = (void *) ((uint64_t) masked_p | (module_delta << CONFIG_GEM5_KASLR_MODULE_ALIGN_BIT));
+
+	if (masked_p && (kasan_alloc_module_shadow(masked_p, size, gfp_mask) < 0)) {
+		vfree(masked_p);
+		return NULL;
+	}
+#else
 	p = __vmalloc_node_range(size, MODULE_ALIGN,
 				 MODULES_VADDR + get_module_load_offset(),
 				 MODULES_END, gfp_mask, PAGE_KERNEL,
@@ -83,6 +106,9 @@ void *module_alloc(unsigned long size)
 		vfree(p);
 		return NULL;
 	}
+#endif
+
+	pr_info("@@@ module_alloc %lx\n", (unsigned long) p);
 
 	return p;
 }

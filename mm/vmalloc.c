@@ -285,6 +285,13 @@ static int vmap_range_noflush(unsigned long addr, unsigned long end,
 	int err;
 	pgtbl_mod_mask mask = 0;
 
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] TODO: Not needed?
+	unsigned long size = end - addr;
+	addr = gem5_kaslr_mask(addr);
+	end = addr + size;
+#endif
+
 	might_sleep();
 	BUG_ON(addr >= end);
 
@@ -308,6 +315,13 @@ int ioremap_page_range(unsigned long addr, unsigned long end,
 		phys_addr_t phys_addr, pgprot_t prot)
 {
 	int err;
+
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] TODO: Not needed?
+	unsigned long size = end - addr;
+	addr = gem5_kaslr_mask(addr);
+	end = addr + size;
+#endif
 
 	err = vmap_range_noflush(addr, end, phys_addr, pgprot_nx(prot),
 				 ioremap_max_page_shift);
@@ -418,6 +432,14 @@ void __vunmap_range_noflush(unsigned long start, unsigned long end)
 	unsigned long addr = start;
 	pgtbl_mod_mask mask = 0;
 
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] TODO: I think we do not need mask here! DOUBLE CHECK!!!
+	unsigned long size = end - start;
+	start = gem5_kaslr_mask(start);
+	end = start + size;
+	addr = start;
+#endif
+
 	BUG_ON(addr >= end);
 	pgd = pgd_offset_k(addr);
 	do {
@@ -435,6 +457,13 @@ void __vunmap_range_noflush(unsigned long start, unsigned long end)
 
 void vunmap_range_noflush(unsigned long start, unsigned long end)
 {
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] TODO: I think we do not need mask here! DOUBLE CHECK!!!
+	unsigned long size = end - start;
+	start = gem5_kaslr_mask(start);
+	end = start + size;
+#endif
+
 	kmsan_vunmap_range_noflush(start, end);
 	__vunmap_range_noflush(start, end);
 }
@@ -450,6 +479,13 @@ void vunmap_range_noflush(unsigned long start, unsigned long end)
  */
 void vunmap_range(unsigned long addr, unsigned long end)
 {
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	unsigned long size = end - addr;
+	addr = gem5_kaslr_mask(addr);
+	end = addr + size;
+#endif
+
 	flush_cache_vunmap(addr, end);
 	vunmap_range_noflush(addr, end);
 	flush_tlb_kernel_range(addr, end);
@@ -581,6 +617,13 @@ int __vmap_pages_range_noflush(unsigned long addr, unsigned long end,
 {
 	unsigned int i, nr = (end - addr) >> PAGE_SHIFT;
 
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] TODO: I think we do not need mask here! DOUBLE CHECK!!!
+	unsigned long size = end - addr;
+	addr = gem5_kaslr_mask(addr);
+	end = addr + size;
+#endif
+
 	WARN_ON(page_shift < PAGE_SHIFT);
 
 	if (!IS_ENABLED(CONFIG_HAVE_ARCH_HUGE_VMALLOC) ||
@@ -605,6 +648,13 @@ int __vmap_pages_range_noflush(unsigned long addr, unsigned long end,
 int vmap_pages_range_noflush(unsigned long addr, unsigned long end,
 		pgprot_t prot, struct page **pages, unsigned int page_shift)
 {
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	unsigned long size = end - addr;
+	addr = gem5_kaslr_mask(addr);
+	end = addr + size;
+#endif
+
 	int ret = kmsan_vmap_pages_range_noflush(addr, end, prot, pages,
 						 page_shift);
 
@@ -629,6 +679,13 @@ static int vmap_pages_range(unsigned long addr, unsigned long end,
 		pgprot_t prot, struct page **pages, unsigned int page_shift)
 {
 	int err;
+
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	unsigned long size = end - addr;
+	addr = gem5_kaslr_mask(addr);
+	end = addr + size;
+#endif
 
 	err = vmap_pages_range_noflush(addr, end, prot, pages, page_shift);
 	flush_cache_vmap(addr, end);
@@ -658,6 +715,8 @@ EXPORT_SYMBOL_GPL(is_vmalloc_or_module_addr);
  */
 struct page *vmalloc_to_page(const void *vmalloc_addr)
 {
+	// [Shixin] Do not need mask since this only do a page table walk,
+	// 	and we have mask inside the page index function.
 	unsigned long addr = (unsigned long) vmalloc_addr;
 	struct page *page = NULL;
 	pgd_t *pgd = pgd_offset_k(addr);
@@ -832,6 +891,11 @@ static struct vmap_area *__find_vmap_area(unsigned long addr, struct rb_root *ro
 	struct rb_node *n = root->rb_node;
 
 	addr = (unsigned long)kasan_reset_tag((void *)addr);
+
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	addr = gem5_kaslr_mask(addr);
+#endif
 
 	while (n) {
 		struct vmap_area *va;
@@ -1858,6 +1922,11 @@ struct vmap_area *find_vmap_area(unsigned long addr)
 {
 	struct vmap_area *va;
 
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	addr = (const void *) (gem5_kaslr_mask(addr));
+#endif
+
 	spin_lock(&vmap_area_lock);
 	va = __find_vmap_area(addr, &vmap_area_root);
 	spin_unlock(&vmap_area_lock);
@@ -1870,6 +1939,7 @@ static struct vmap_area *find_unlink_vmap_area(unsigned long addr)
 	struct vmap_area *va;
 
 	spin_lock(&vmap_area_lock);
+	// [Shixin] We do not need mask here since __find_vmap_area has mask.
 	va = __find_vmap_area(addr, &vmap_area_root);
 	if (va)
 		unlink_va(va, &vmap_area_root);
@@ -2338,8 +2408,14 @@ EXPORT_SYMBOL_GPL(vm_unmap_aliases);
 void vm_unmap_ram(const void *mem, unsigned int count)
 {
 	unsigned long size = (unsigned long)count << PAGE_SHIFT;
-	unsigned long addr = (unsigned long)kasan_reset_tag(mem);
+	unsigned long addr;
 	struct vmap_area *va;
+
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	mem = (const void *) (gem5_kaslr_mask(mem));
+#endif
+	addr = (unsigned long)kasan_reset_tag(mem);
 
 	might_sleep();
 	BUG_ON(!addr);
@@ -2572,6 +2648,7 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 		unsigned long start, unsigned long end, int node,
 		gfp_t gfp_mask, const void *caller)
 {
+	// [Shixin] I think we do not need mask here!
 	struct vmap_area *va;
 	struct vm_struct *area;
 	unsigned long requested_size = size;
@@ -2619,6 +2696,13 @@ struct vm_struct *__get_vm_area_caller(unsigned long size, unsigned long flags,
 				       unsigned long start, unsigned long end,
 				       const void *caller)
 {
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	unsigned long end_start = end - start;
+	start = (const void *) (gem5_kaslr_mask(start));
+	end = start + end_start;
+#endif
+
 	return __get_vm_area_node(size, 1, PAGE_SHIFT, flags, start, end,
 				  NUMA_NO_NODE, GFP_KERNEL, caller);
 }
@@ -2664,6 +2748,11 @@ struct vm_struct *find_vm_area(const void *addr)
 {
 	struct vmap_area *va;
 
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	addr = (const void *) (gem5_kaslr_mask(addr));
+#endif
+
 	va = find_vmap_area((unsigned long)addr);
 	if (!va)
 		return NULL;
@@ -2685,6 +2774,11 @@ struct vm_struct *remove_vm_area(const void *addr)
 {
 	struct vmap_area *va;
 	struct vm_struct *vm;
+
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	addr = (const void *) (gem5_kaslr_mask(addr));
+#endif
 
 	might_sleep();
 
@@ -2774,6 +2868,11 @@ void vfree_atomic(const void *addr)
 {
 	struct vfree_deferred *p = raw_cpu_ptr(&vfree_deferred);
 
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	addr = (const void *) (gem5_kaslr_mask(addr));
+#endif
+
 	BUG_ON(in_nmi());
 	kmemleak_free(addr);
 
@@ -2808,6 +2907,11 @@ void vfree(const void *addr)
 {
 	struct vm_struct *vm;
 	int i;
+
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	addr = (const void *) (gem5_kaslr_mask(addr));
+#endif
 
 	if (unlikely(in_interrupt())) {
 		vfree_atomic(addr);
@@ -2860,6 +2964,11 @@ EXPORT_SYMBOL(vfree);
 void vunmap(const void *addr)
 {
 	struct vm_struct *vm;
+
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	addr = (const void *) (gem5_kaslr_mask(addr));
+#endif
 
 	BUG_ON(in_interrupt());
 	might_sleep();
@@ -3237,6 +3346,7 @@ void *__vmalloc_node_range(unsigned long size, unsigned long align,
 			pgprot_t prot, unsigned long vm_flags, int node,
 			const void *caller)
 {
+	// [Shixin] I think we do not need mask here!
 	struct vm_struct *area;
 	void *ret;
 	kasan_vmalloc_flags_t kasan_flags = KASAN_VMALLOC_NONE;
@@ -3746,6 +3856,11 @@ long vread_iter(struct iov_iter *iter, const char *addr, size_t count)
 	char *vaddr;
 	size_t n, size, flags, remains;
 
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	addr = (const char *) (gem5_kaslr_mask(addr));
+#endif
+
 	addr = kasan_reset_tag(addr);
 
 	/* Don't allow overflow */
@@ -3856,6 +3971,11 @@ int remap_vmalloc_range_partial(struct vm_area_struct *vma, unsigned long uaddr,
 	struct vm_struct *area;
 	unsigned long off;
 	unsigned long end_index;
+
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+	// [Shixin] Use masked address here!
+	kaddr = (void *) (gem5_kaslr_mask(kaddr));
+#endif
 
 	if (check_shl_overflow(pgoff, PAGE_SHIFT, &off))
 		return -EINVAL;

@@ -53,6 +53,34 @@
 #define gem5_kaslr_get_delta_pte(delta) (((delta & 0x7f) << 52) + ((delta & 0x180) << 9))
 #endif
 
+#ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH
+#define text_mask(addr) \
+	((-(!!((addr ^ _AC(0xffffff8000000000, UL)) >> 39) | ! ((addr ^ _AC(0xffffffe000000000, UL)) >> 37))) | GEM5_KASLR_CLEAR_MASK)
+#endif
+
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+#define module_mask(addr) \
+	((-(!!((addr ^ MODULES_VADDR) >> 39))) | GEM5_KASLR_MODULE_CLEAR_MASK)
+#endif
+
+#ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+/* Protect text + module */
+#define gem5_kaslr_mask(addr) (((uint64_t) addr) & text_mask((uint64_t) addr) & module_mask((uint64_t) addr))
+#else
+/* Protect text */
+#define gem5_kaslr_mask(addr) (((uint64_t) addr) & text_mask((uint64_t) addr))
+#endif
+#else
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+/* Protect module*/
+#define gem5_kaslr_mask(addr) (((uint64_t) addr) & module_mask((uint64_t) addr))
+#else
+/* No KASLR protection */
+#define gem5_kaslr_mask(addr) addr
+#endif
+#endif
+
 #define __START_KERNEL		(__START_KERNEL_map + __PHYSICAL_START)
 
 #ifdef CONFIG_X86_64

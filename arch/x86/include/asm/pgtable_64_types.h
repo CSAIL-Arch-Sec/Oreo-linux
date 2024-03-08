@@ -189,14 +189,18 @@ extern unsigned int ptrs_per_p4d;
 
 #define RAW_MODULES_VADDR	(__START_KERNEL_map + KERNEL_IMAGE_SIZE)
 /*#define MODULES_VADDR		(KERNEL_MAP_BASE + KERNEL_IMAGE_SIZE)*/
-#define MODULES_VADDR		_AC(0xfffffe8000000000, UL)
+//#define MODULES_VADDR		_AC(0xfffffe8000000000, UL)
+#define MODULES_VADDR		_AC(0xffffff8040000000, UL)
+//#define MODULES_VADDR		RAW_MODULES_VADDR
 /* The module sections ends with the start of the fixmap */
 #ifndef CONFIG_DEBUG_KMAP_LOCAL_FORCE_MAP
 # define RAW_MODULES_END       _AC(0xffffffffff000000, UL)
 #else
 # define RAW_MODULES_END       _AC(0xfffffffffe000000, UL)
 #endif
-#define MODULES_END		(_AC(0xffffff0000000000, UL))
+//#define MODULES_END		(_AC(0xffffff0000000000, UL))
+#define MODULES_END		(_AC(0xffffff8080000000, UL))
+/*#define MODULES_END		RAW_MODULES_END*/
 #define MODULES_LEN		(MODULES_END - MODULES_VADDR)
 
 #define ESPFIX_PGD_ENTRY	_AC(-2, UL)

@@ -245,9 +245,6 @@ unsigned long __head __startup_64(unsigned long physaddr,
 	}
 
 	pud = fixup_pointer(&level3_kernel_pgt, physaddr);
-	// TODO: Add kernel text aslr defense here!
-	// pud[0] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt) + (delta << unused_bit_offset);
-	// pud[511 or 1] = pgtable_flags + SYM_ABS_VAL(level2_fixmap_pgt) + (delta << unused_bit_offset);
 	if (IS_ENABLED(CONFIG_X86_PIE)) {
 		pud[510] = 0;
 		pud[511] = 0;

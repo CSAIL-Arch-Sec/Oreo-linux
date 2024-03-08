@@ -82,8 +82,8 @@ void *module_alloc(unsigned long size)
 	uint64_t module_delta = CONFIG_GEM5_KASLR_MODULE_DELTA;
 #endif
 	void *masked_p = __vmalloc_node_range(size, MODULE_ALIGN,
-				 MODULES_VADDR,
-			         MODULES_VADDR + (1 << CONFIG_GEM5_KASLR_MODULE_ALIGN_BIT),
+			         MODULES_VADDR + get_module_load_offset(),
+			         MODULES_END,
 			         gfp_mask,
 			         __pgprot(PAGE_KERNEL.pgprot | gem5_kaslr_get_delta_pte(module_delta)),
 				 VM_FLUSH_RESET_PERMS | VM_DEFER_KMEMLEAK,

@@ -59,8 +59,10 @@
 #endif
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+/*#define module_mask(addr) \
+	((-(!!((addr ^ MODULES_VADDR) >> 39))) | GEM5_KASLR_MODULE_CLEAR_MASK)*/
 #define module_mask(addr) \
-	((-(!!((addr ^ MODULES_VADDR) >> 39))) | GEM5_KASLR_MODULE_CLEAR_MASK)
+	((-(!!((addr ^ _AC(0xffffff8000000000, UL)) >> 39) | ! ((addr ^ _AC(0xffffffe000000000, UL)) >> 37))) | GEM5_KASLR_CLEAR_MASK)
 #endif
 
 #ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH

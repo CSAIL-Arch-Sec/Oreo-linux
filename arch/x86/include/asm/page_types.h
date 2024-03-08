@@ -53,6 +53,8 @@
 #define gem5_kaslr_get_delta_pte(delta) (((delta & 0x7f) << 52) + ((delta & 0x180) << 9))
 #endif
 
+/* TODO: Optimize the implementation here! */
+
 #ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH
 #define text_mask(addr) \
 	((-(!!((addr ^ _AC(0xffffff8000000000, UL)) >> 39) | ! ((addr ^ _AC(0xffffffe000000000, UL)) >> 37))) | GEM5_KASLR_CLEAR_MASK)
@@ -62,7 +64,7 @@
 /*#define module_mask(addr) \
 	((-(!!((addr ^ MODULES_VADDR) >> 39))) | GEM5_KASLR_MODULE_CLEAR_MASK)*/
 #define module_mask(addr) \
-	((-(!!((addr ^ _AC(0xffffff8000000000, UL)) >> 39) | ! ((addr ^ _AC(0xffffffe000000000, UL)) >> 37))) | GEM5_KASLR_CLEAR_MASK)
+	((-(!!((addr ^ _AC(0xffffff8000000000, UL)) >> 39) | ! ((addr ^ _AC(0xffffffe000000000, UL)) >> 37))) | GEM5_KASLR_MODULE_CLEAR_MASK)
 #endif
 
 #ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH

@@ -85,7 +85,7 @@ def compile_one_config(config_name: str, delta_config, compile_num_cores: int = 
 )
 def main(config_delta: bool, default_delta: bool, delta_list: str, num_cores: int):
     config_name_list = [
-        "gem5",
+        # "gem5",
         # "gem5_protect",
         "gem5_protect_module",
         # "gem5_protect_both"

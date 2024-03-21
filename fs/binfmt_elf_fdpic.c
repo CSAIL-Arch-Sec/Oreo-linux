@@ -944,7 +944,8 @@ static int elf_fdpic_map_file_constdisp_on_uclinux(
 	}
 
 	/* allocate one big anon block for everything */
-	maddr = vm_mmap(NULL, load_addr, top - base,
+    pr_info("@@@ elf_fdpic_map_file_constdisp_on_uclinux %lx\n", load_addr);
+    maddr = vm_mmap(NULL, load_addr, top - base,
 			PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE, 0);
 	if (IS_ERR_VALUE(maddr))
 		return (int) maddr;
@@ -1078,7 +1079,8 @@ static int elf_fdpic_map_file_by_direct_mmap(struct elf_fdpic_params *params,
 
 		/* create the mapping */
 		disp = phdr->p_vaddr & ~PAGE_MASK;
-		maddr = vm_mmap(file, maddr, phdr->p_memsz + disp, prot, flags,
+        pr_info("@@@ elf_fdpic_map_file_by_direct_mmap %lx\n", maddr);
+        maddr = vm_mmap(file, maddr, phdr->p_memsz + disp, prot, flags,
 				phdr->p_offset - disp);
 
 		kdebug("mmap[%d] <file> sz=%lx pr=%x fl=%x of=%lx --> %08lx",
@@ -1123,6 +1125,7 @@ static int elf_fdpic_map_file_by_direct_mmap(struct elf_fdpic_params *params,
 			unsigned long xmaddr;
 
 			flags |= MAP_FIXED | MAP_ANONYMOUS;
+            pr_info("@@@ elf_fdpic_map_file_by_direct_mmap %lx\n", xaddr);
 			xmaddr = vm_mmap(NULL, xaddr, excess - excess1,
 					 prot, flags, 0);
 

@@ -2921,7 +2921,10 @@ static int __vm_munmap(unsigned long start, size_t len, bool unlock)
 	int ret;
 	struct mm_struct *mm = current->mm;
 	LIST_HEAD(uf);
-	VMA_ITERATOR(vmi, mm, start);
+
+    start = gem5_aslr_remove_rand_offset(start);
+
+    VMA_ITERATOR(vmi, mm, start);
 
 	if (mmap_write_lock_killable(mm))
 		return -EINTR;
@@ -3073,6 +3076,10 @@ static int do_brk_flags(struct vma_iterator *vmi, struct vm_area_struct *vma,
 	struct mm_struct *mm = current->mm;
 	struct vma_prepare vp;
 
+    if ((flags & 0x1f0000000000000) != 0) {
+        panic("@@@ do_brk_flags %lx\n", flags);
+    }
+
 	/*
 	 * Check against address space limits by the changed size
 	 * Note: This happens *after* clearing old mappings in some code paths.
@@ -3156,6 +3163,8 @@ int vm_brk_flags(unsigned long addr, unsigned long request, unsigned long flags)
 	int ret;
 	bool populate;
 	LIST_HEAD(uf);
+    unsigned long delta_pte = gem5_aslr_delta_pte_from_addr(addr);
+    addr = gem5_aslr_remove_rand_offset(addr);
 	VMA_ITERATOR(vmi, mm, addr);
 
 	len = PAGE_ALIGN(request);
@@ -3179,8 +3188,11 @@ int vm_brk_flags(unsigned long addr, unsigned long request, unsigned long flags)
 	if (ret)
 		goto munmap_failed;
 
+    if (delta_pte != 0)
+        panic("@@@ vm_brk_flags %lx %lx\n", addr, delta_pte);
+
 	vma = vma_prev(&vmi);
-	ret = do_brk_flags(&vmi, vma, addr, len, flags);
+	ret = do_brk_flags(&vmi, vma, addr, len, flags | delta_pte);
 	populate = ((mm->def_flags & VM_LOCKED) != 0);
 	mmap_write_unlock(mm);
 	userfaultfd_unmap_complete(mm, &uf);

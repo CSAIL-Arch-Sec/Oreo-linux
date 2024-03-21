@@ -3083,3 +3083,30 @@ config GEM5_KASLR_MODULE_FINE_GRAINED
 	  [Shixin] This enables randomizing the kernel virtual addresses of different modules with
 	  different offsets.
 
+config GEM5_ASLR_PROTECTION_HIGH
+	bool "gem5 simulation: enable ASLR protection for user programs"
+	default n
+	help
+	  [Shixin] This enables user ASLR without leaking offset from page table contents.
+
+config GEM5_ASLR_MAX_BIT
+    int "gem5 simulation: maximum bits to be randomized"
+    depends on GEM5_ASLR_PROTECTION_HIGH
+    default 53
+    help
+      [Shixin] This value puts the maximum bits to be randomized of user program address.
+
+config GEM5_ASLR_ALIGN_BIT
+    int "gem5 simulation: Alignment bits to which kernel virtual address should be aligned"
+    depends on GEM5_ASLR_PROTECTION_HIGH
+    default 48
+    help
+      [Shixin] This value puts the alignment restrictions on user ASLR offset protected by our defense.
+
+config GEM5_ASLR_DELTA
+	hex "gem5 simulation: user ASLR delta"
+	default 0
+	range 0 31
+	help
+	  [Shixin] This value set ASLR random delta for user programs.
+

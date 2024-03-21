@@ -50,6 +50,7 @@
 #endif
 
 #if defined(CONFIG_GEM5_KASLR_PROTECTION_HIGH) || defined(CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH)
+/* TODO: This take bits that are used by Linux, which is not ok (especially in user space). FIXME! */
 #define gem5_kaslr_get_delta_pte(delta) (((delta & 0x7f) << 52) + ((delta & 0x180) << 9))
 #endif
 
@@ -83,6 +84,18 @@
 /* No KASLR protection */
 #define gem5_kaslr_mask(addr) addr
 #endif
+#endif
+
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+#define GEM5_ASLR_GET_DELTA_MASK ((_AC(1,ULL) << CONFIG_GEM5_ASLR_MAX_BIT) - (_AC(1,ULL) << CONFIG_GEM5_ASLR_ALIGN_BIT))
+#define GEM5_ASLR_CLEAR_MASK (~GEM5_ASLR_GET_DELTA_MASK)
+#define GEM5_ASLR_GET_PTE_DELTA_MASK \
+    ((_AC(1,ULL) << (CONFIG_GEM5_ASLR_MAX_BIT - CONFIG_GEM5_ASLR_ALIGN_BIT + 52)) - (_AC(1,ULL) << 52))
+#define gem5_aslr_offset(addr) (((uint64_t) addr) & GEM5_ASLR_GET_DELTA_MASK)
+#define gem5_aslr_delta_pte_from_offset(offset) (offset << (52 - CONFIG_GEM5_ASLR_ALIGN_BIT))
+#define gem5_aslr_delta_pte_from_addr(addr) (gem5_aslr_offset(addr) << (52 - CONFIG_GEM5_ASLR_ALIGN_BIT))
+#define gem5_aslr_remove_rand_offset(addr) ((uint64_t) addr & GEM5_ASLR_CLEAR_MASK)
+#define gem5_aslr_get_offset(delta) (gem5_aslr_offset(delta << CONFIG_GEM5_ASLR_ALIGN_BIT))
 #endif
 
 #define __START_KERNEL		(__START_KERNEL_map + __PHYSICAL_START)

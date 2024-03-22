@@ -88,7 +88,7 @@ int __arch_override_mprotect_pkey(struct vm_area_struct *vma, int prot, int pkey
 	 * fall through as if we do not have execute-only
 	 * support in this mm.
 	 */
-	if (prot == PROT_EXEC) {
+	if (gem5_aslr_remove_rand_offset(prot) == PROT_EXEC) {
 		pkey = execute_only_pkey(vma->vm_mm);
 		if (pkey > 0)
 			return pkey;

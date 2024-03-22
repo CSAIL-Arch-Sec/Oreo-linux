@@ -96,6 +96,8 @@
 #define gem5_aslr_delta_pte_from_addr(addr) (gem5_aslr_offset(addr) << (52 - CONFIG_GEM5_ASLR_ALIGN_BIT))
 #define gem5_aslr_remove_rand_offset(addr) ((uint64_t) addr & GEM5_ASLR_CLEAR_MASK)
 #define gem5_aslr_get_offset(delta) (gem5_aslr_offset(delta << CONFIG_GEM5_ASLR_ALIGN_BIT))
+#else
+#define gem5_aslr_remove_rand_offset(addr) addr
 #endif
 
 #define __START_KERNEL		(__START_KERNEL_map + __PHYSICAL_START)

@@ -4338,7 +4338,6 @@ void set_pte_range(struct vm_fault *vmf, struct folio *folio,
 
 	flush_icache_pages(vma, page, nr);
 	entry = mk_pte(page, vma->vm_page_prot);
-    entry.pte |= (vma->vm_flags & GEM5_ASLR_GET_PTE_DELTA_MASK);
 
 	if (prefault && arch_wants_old_prefaulted_pte())
 		entry = pte_mkold(entry);

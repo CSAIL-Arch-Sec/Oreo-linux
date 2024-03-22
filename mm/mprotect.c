@@ -699,8 +699,7 @@ static int do_mprotect_pkey(unsigned long start, size_t len,
 	struct mmu_gather tlb;
 	struct vma_iterator vmi;
 
-    unsigned long delta_pte = ((start >> 48) & 0x1f) << 52;
-    start &= 0xffffffffffff;
+    start = gem5_aslr_remove_rand_offset(start);
 
 	start = untagged_addr(start);
 

@@ -554,11 +554,6 @@ unsigned long vm_mmap_pgoff(struct file *file, unsigned long addr,
 		userfaultfd_unmap_complete(mm, &uf);
 		if (populate)
 			mm_populate(ret, populate);
-        if ((long) ret < 0) {
-            panic("@@@ vm_mmap_pgoff do_mmap = %lx\n", (long) ret);
-        }
-	} else {
-        panic("@@@ vm_mmap_pgoff security_mmap_file = %lx\n", (long) ret);
     }
 	return ret | offset;
 }

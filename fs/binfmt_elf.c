@@ -120,10 +120,6 @@ static int set_brk(unsigned long start, unsigned long end, int prot)
 		 * If the header is requesting these pages to be
 		 * executable, honour that (ppc32 needs this).
 		 */
-        // TODO: this if is not satisfied!
-        if (gem5_aslr_offset(start) != 0) {
-            panic("@@@ set_brk %lx\n", start);
-        }
 		int error = vm_brk_flags(start, end - start,
 				prot & PROT_EXEC ? VM_EXEC : 0);
 		if (error)
@@ -376,9 +372,7 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 		unsigned long total_size)
 {
 	unsigned long map_addr;
-#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
-    unsigned long unmasked_map_addr;
-#endif
+    unsigned long masked_map_addr;
 	unsigned long size = eppnt->p_filesz + ELF_PAGEOFFSET(eppnt->p_vaddr);
 	unsigned long off = eppnt->p_offset - ELF_PAGEOFFSET(eppnt->p_vaddr);
 	addr = ELF_PAGESTART(addr);
@@ -400,30 +394,20 @@ static unsigned long elf_map(struct file *filep, unsigned long addr,
 	if (total_size) {
 		total_size = ELF_PAGEALIGN(total_size);
 		map_addr = vm_mmap(filep, addr, total_size, prot, type, off);
-#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
-        unmasked_map_addr = map_addr;
-        map_addr = gem5_aslr_remove_rand_offset(map_addr);
-#endif
-		if (!BAD_ADDR(map_addr))
+        masked_map_addr = gem5_aslr_remove_rand_offset(map_addr);
+		if (!BAD_ADDR(masked_map_addr))
 			vm_munmap(map_addr+size, total_size-size);
 	} else {
         map_addr = vm_mmap(filep, addr, size, prot, type, off);
-#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
-        unmasked_map_addr = map_addr;
-        map_addr = gem5_aslr_remove_rand_offset(map_addr);
-#endif
+        masked_map_addr = gem5_aslr_remove_rand_offset(map_addr);
     }
 
 	if ((type & MAP_FIXED_NOREPLACE) &&
-	    PTR_ERR((void *)map_addr) == -EEXIST)
+	    PTR_ERR((void *)masked_map_addr) == -EEXIST)
 		pr_info("%d (%s): Uhuuh, elf segment at %px requested but the memory is mapped already\n",
 			task_pid_nr(current), current->comm, (void *)addr);
 
-#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
-    return(unmasked_map_addr);
-#else
 	return(map_addr);
-#endif
 }
 
 static unsigned long total_mapping_size(const struct elf_phdr *phdr, int nr)
@@ -622,10 +606,7 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 	unsigned long total_size;
 	int i;
 
-    pr_info("@@@ load_elf_interp %s\n", interpreter->f_path.dentry->d_name.name);
-
-//    unsigned long delta = no_base & 0xffff000000000000;
-//    no_base &= 0xffffffffffff;
+//    pr_info("@@@ load_elf_interp %s\n", interpreter->f_path.dentry->d_name.name);
 
 	/* First of all, some simple consistency checks */
 	if (interp_elf_ex->e_type != ET_EXEC &&
@@ -733,7 +714,6 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 	error = load_addr;
 out:
     return error;
-//	return error | delta;
 }
 
 /*
@@ -1076,7 +1056,7 @@ out_free_interp:
 					 elf_brk + load_bias,
 					 bss_prot);
 			if (retval) {
-                pr_info("Unlikely elf_brk > elf_bss\n");
+//                pr_info("Unlikely elf_brk > elf_bss\n");
                 goto out_free_dentry;
             }
 			nbyte = ELF_PAGEOFFSET(elf_bss);
@@ -1145,9 +1125,9 @@ out_free_interp:
 			 * without MAP_FIXED nor MAP_FIXED_NOREPLACE).
 			 */
 			if (interpreter) {
-                static unsigned long load_elf_binary_counter = 0;
-                load_elf_binary_counter++;
-                pr_info("@@@ load_elf_binary_counter %lx", load_elf_binary_counter);
+//                static unsigned long load_elf_binary_counter = 0;
+//                load_elf_binary_counter++;
+//                pr_info("@@@ load_elf_binary_counter %lx", load_elf_binary_counter);
 				load_bias = ELF_ET_DYN_BASE;
 				if (current->flags & PF_RANDOMIZE) {
                     // TODO: Fix the dirty test code here later!
@@ -1162,11 +1142,11 @@ out_free_interp:
 			} else
 				load_bias = 0;
 
-            if (bprm->file) {
-                pr_info("@@@ init load_bias %lx file %s\n", load_bias, bprm->file->f_path.dentry->d_name.name);
-            } else {
-                pr_info("@@@ init load_bias %lx\n", load_bias);
-            }
+//            if (bprm->file) {
+//                pr_info("@@@ init load_bias %lx file %s\n", load_bias, bprm->file->f_path.dentry->d_name.name);
+//            } else {
+//                pr_info("@@@ init load_bias %lx\n", load_bias);
+//            }
 
 
 			/*
@@ -1204,23 +1184,15 @@ out_free_interp:
 			}
 		}
 
-//        unsigned long masked_addr = load_bias + vaddr;
-//        elf_prot |= ((masked_addr >> 48) << 52);
-//        masked_addr &= 0xffffffffffff;
-
-
 		error = elf_map(bprm->file, load_bias + vaddr, elf_ppnt,
 				elf_prot, elf_flags, total_size);
         unsigned long masked_error = gem5_aslr_remove_rand_offset(error);
 		if (BAD_ADDR(masked_error)) {
 			retval = IS_ERR_VALUE(masked_error) ?
 				PTR_ERR((void*)masked_error) : -EINVAL;
-            pr_info("@@@ load_elf_binary retval 1 %d\n", retval);
+//            pr_info("@@@ load_elf_binary retval 1 %d\n", retval);
             goto out_free_dentry;
 		}
-
-//        error |= load_bias & 0x1f000000000000;
-//        pr_info("@@@ load addr: %lx, masked addr: %lx\n", load_bias + vaddr, masked_addr);
 
 		if (first_pt_load) {
 			first_pt_load = 0;
@@ -1257,7 +1229,7 @@ out_free_interp:
 		    TASK_SIZE - elf_ppnt->p_memsz < k) {
 			/* set_brk can never work. Avoid overflows. */
 			retval = -EINVAL;
-            pr_info("@@@ load_elf_binary retval 2 %d\n", retval);
+//            pr_info("@@@ load_elf_binary retval 2 %d\n", retval);
             goto out_free_dentry;
 		}
 
@@ -1292,12 +1264,12 @@ out_free_interp:
 	 */
     retval = set_brk(elf_bss, elf_brk, bss_prot);
 	if (retval) {
-        pr_info("@@@ load_elf_binary retval 3 %d\n", retval);
+//        pr_info("@@@ load_elf_binary retval 3 %d\n", retval);
         goto out_free_dentry;
     }
 	if (likely(elf_bss != elf_brk) && unlikely(padzero(elf_bss))) {
 		retval = -EFAULT; /* Nobody gets to see this, but.. */
-        pr_info("@@@ load_elf_binary retval 4 %d\n", retval);
+//        pr_info("@@@ load_elf_binary retval 4 %d\n", retval);
 		goto out_free_dentry;
 	}
 
@@ -1313,11 +1285,12 @@ out_free_interp:
 			 */
 			interp_load_addr = elf_entry;
 			elf_entry += interp_elf_ex->e_entry;
-            pr_info("@@@ Interp load_addr %lx entry %lx\n", interp_load_addr, elf_entry);
+//            pr_info("@@@ Interp load_addr %lx entry %lx\n", interp_load_addr, elf_entry);
 		}
-		if (BAD_ADDR(elf_entry & 0xffffffffffff)) {
-			retval = IS_ERR_VALUE(elf_entry & 0xffffffffffff) ?
-					(int)elf_entry & 0xffffffffffff : -EINVAL;
+        unsigned long masked_elf_entry = gem5_aslr_remove_rand_offset(elf_entry);
+		if (BAD_ADDR(masked_elf_entry)) {
+			retval = IS_ERR_VALUE(masked_elf_entry) ?
+					(int)masked_elf_entry : -EINVAL;
 			goto out_free_dentry;
 		}
 		reloc_func_desc = interp_load_addr;
@@ -1331,7 +1304,7 @@ out_free_interp:
 		elf_entry = e_entry;
 		if (BAD_ADDR(elf_entry)) {
 			retval = -EINVAL;
-            pr_info("@@@ load_elf_binary retval 5 %d\n", retval);
+//            pr_info("@@@ load_elf_binary retval 5 %d\n", retval);
 			goto out_free_dentry;
 		}
 	}
@@ -1343,7 +1316,7 @@ out_free_interp:
 #ifdef ARCH_HAS_SETUP_ADDITIONAL_PAGES
 	retval = ARCH_SETUP_ADDITIONAL_PAGES(bprm, elf_ex, !!interpreter);
 	if (retval < 0) {
-        pr_info("@@@ load_elf_binary retval 6 %d\n", retval);
+//        pr_info("@@@ load_elf_binary retval 6 %d\n", retval);
         goto out;
     }
 #endif /* ARCH_HAS_SETUP_ADDITIONAL_PAGES */
@@ -1351,7 +1324,7 @@ out_free_interp:
 	retval = create_elf_tables(bprm, elf_ex, interp_load_addr,
 				   e_entry, phdr_addr);
 	if (retval < 0) {
-        pr_info("@@@ load_elf_binary retval 7 %d\n", retval);
+//        pr_info("@@@ load_elf_binary retval 7 %d\n", retval);
         goto out;
     }
 
@@ -1409,24 +1382,24 @@ out_free_interp:
 	START_THREAD(elf_ex, regs, elf_entry, bprm->p);
 	retval = 0;
 out:
-    if (retval != 0) {
-        pr_info("@@@ load_elf_binary goes wrong %d\n", retval);
-    }
+//    if (retval != 0) {
+//        pr_info("@@@ load_elf_binary goes wrong %d\n", retval);
+//    }
 	return retval;
 
 	/* error cleanup */
 out_free_dentry:
 	kfree(interp_elf_ex);
 	kfree(interp_elf_phdata);
-    pr_info("@@@ out_free_dentry\n");
+//    pr_info("@@@ out_free_dentry\n");
 out_free_file:
 	allow_write_access(interpreter);
 	if (interpreter)
 		fput(interpreter);
-    pr_info("@@@ out_free_file\n");
+//    pr_info("@@@ out_free_file\n");
 out_free_ph:
 	kfree(elf_phdata);
-    pr_info("@@@ out_free_ph\n");
+//    pr_info("@@@ out_free_ph\n");
 	goto out;
 }
 
@@ -1441,7 +1414,7 @@ static int load_elf_library(struct file *file)
 	int retval, error, i, j;
 	struct elfhdr elf_ex;
 
-    pr_info("@@@ load_elf_binary: %s\n", file->f_path.dentry->d_iname);
+//    pr_info("@@@ load_elf_binary: %s\n", file->f_path.dentry->d_iname);
 
 	error = -ENOEXEC;
 	retval = elf_read(file, &elf_ex, sizeof(elf_ex), 0);
@@ -1484,7 +1457,7 @@ static int load_elf_library(struct file *file)
 		eppnt++;
 
 	/* Now use mmap to map the library into memory. */
-    pr_info("@@@ load_elf_library %lx\n", eppnt->p_vaddr);
+//    pr_info("@@@ load_elf_library %lx\n", eppnt->p_vaddr);
 	error = vm_mmap(file,
 			ELF_PAGESTART(eppnt->p_vaddr),
 			(eppnt->p_filesz +

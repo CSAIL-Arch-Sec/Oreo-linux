@@ -401,7 +401,7 @@ int __arch_override_mprotect_pkey(struct vm_area_struct *vma, int prot,
 	 * The requested protection is execute-only. Hence let's use an
 	 * execute-only pkey.
 	 */
-	if (prot == PROT_EXEC) {
+	if (gem5_aslr_remove_rand_offset(prot) == PROT_EXEC) {
 		pkey = execute_only_pkey(vma->vm_mm);
 		if (pkey > 0)
 			return pkey;

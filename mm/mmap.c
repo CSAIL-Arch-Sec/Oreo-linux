@@ -98,6 +98,7 @@ void vma_set_page_prot(struct vm_area_struct *vma)
 		vm_flags &= ~VM_SHARED;
 		vm_page_prot = vm_pgprot_modify(vm_page_prot, vm_flags);
 	}
+    pgprot_val(vm_page_prot) |= (vm_flags & GEM5_ASLR_GET_PTE_DELTA_MASK);
 	/* remove_protection_ptes reads vma->vm_page_prot without mmap_lock */
 	WRITE_ONCE(vma->vm_page_prot, vm_page_prot);
 }
@@ -1257,7 +1258,7 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
 			return -EEXIST;
 	}
 
-	if (prot == PROT_EXEC) {
+	if (gem5_aslr_remove_rand_offset(prot) == PROT_EXEC) {
 		pkey = execute_only_pkey(mm);
 		if (pkey < 0)
 			pkey = 0;
@@ -3076,10 +3077,6 @@ static int do_brk_flags(struct vma_iterator *vmi, struct vm_area_struct *vma,
 	struct mm_struct *mm = current->mm;
 	struct vma_prepare vp;
 
-    if ((flags & 0x1f0000000000000) != 0) {
-        panic("@@@ do_brk_flags %lx\n", flags);
-    }
-
 	/*
 	 * Check against address space limits by the changed size
 	 * Note: This happens *after* clearing old mappings in some code paths.
@@ -3187,9 +3184,6 @@ int vm_brk_flags(unsigned long addr, unsigned long request, unsigned long flags)
 	ret = do_vmi_munmap(&vmi, mm, addr, len, &uf, 0);
 	if (ret)
 		goto munmap_failed;
-
-    if (delta_pte != 0)
-        panic("@@@ vm_brk_flags %lx %lx\n", addr, delta_pte);
 
 	vma = vma_prev(&vmi);
 	ret = do_brk_flags(&vmi, vma, addr, len, flags | delta_pte);

@@ -39,6 +39,12 @@ do {							\
 #ifdef CONFIG_RANDOMIZE_BASE
 static unsigned long module_load_offset;
 
+// [Shixin] A dirty way to pass ASLR delta via boot parameters for fast test
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+unsigned long gem5_module_high_delta __ro_after_init = 0;
+EXPORT_SYMBOL(gem5_module_high_delta);
+#endif
+
 /* Mutex protects the module_load_offset. */
 static DEFINE_MUTEX(module_kaslr_mutex);
 
@@ -73,13 +79,12 @@ void *module_alloc(unsigned long size)
 	if (PAGE_ALIGN(size) > MODULES_LEN)
 		return NULL;
 
-	// TODO: Add protection here!
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_FINE_GRAINED
-	uint64_t module_delta = get_random_u32_inclusive(0, 511);
+	uint64_t module_delta = get_random_u32_inclusive(0, (1 << (CONFIG_GEM5_KASLR_MODULE_MAX_BIT - CONFIG_GEM5_KASLR_MODULE_ALIGN_BIT)) - 1);
 #else
-	uint64_t module_delta = CONFIG_GEM5_KASLR_MODULE_DELTA;
+	uint64_t module_delta = gem5_module_high_delta;
 #endif
 	void *masked_p = __vmalloc_node_range(size, MODULE_ALIGN,
 			         MODULES_VADDR + get_module_load_offset(),
@@ -89,7 +94,7 @@ void *module_alloc(unsigned long size)
 				 VM_FLUSH_RESET_PERMS | VM_DEFER_KMEMLEAK,
 				 NUMA_NO_NODE, __builtin_return_address(0));
 
-	p = (void *) ((uint64_t) masked_p | (module_delta << CONFIG_GEM5_KASLR_MODULE_ALIGN_BIT));
+	p = (void *) ((uint64_t) masked_p | ((module_delta << CONFIG_GEM5_KASLR_MODULE_ALIGN_BIT) & GEM5_KASLR_MODULE_GET_DELTA_MASK));
 
 	if (masked_p && (kasan_alloc_module_shadow(masked_p, size, gfp_mask) < 0)) {
 		vfree(masked_p);

@@ -3,48 +3,60 @@ import subprocess
 import shutil
 import re
 from pathlib import Path
+import tomli
 
 script_dir = Path(__file__).resolve().parent
 proj_dir = script_dir.parent
 
 
-def generate_config(text_delta: int, module_delta: int, input_path: Path, output_path: Path):
+def read_config_file(input_path: Path):
+    with input_path.open(mode="rb") as input_file:
+        data = tomli.load(input_file)
+
+    default = None
+    if "default" in data:
+        default = data["default"]
+    assert default is not None
+
+    result = {}
+    for key, val in data.items():
+        if key != "default":
+            result[key] = {**default}
+            result[key].update(val)
+
+    return result
+
+
+def generate_full_config(input_path: Path, output_path: Path, config: dict):
     with input_path.open() as input_file:
         s = input_file.read()
 
-    s = re.sub(
-        r"CONFIG_GEM5_KASLR_DELTA=\d*",
-        f"CONFIG_GEM5_KASLR_DELTA={text_delta}",
-        s
-    )
+    for key, val in config.items():
+        s, count = re.subn(
+            rf"{key}=[\da-z]*",
+            f"{key}={val}",
+            s
+        )
+        if count == 0:
+            s = s + f"{key}={val}\n"
 
-    s = re.sub(
-        r"CONFIG_GEM5_KASLR_MODULE_DELTA=\d*",
-        f"CONFIG_GEM5_KASLR_MODULE_DELTA={module_delta}",
-        s
-    )
-
+    output_path.parent.mkdir(exist_ok=True)
     with output_path.open(mode="w") as output_file:
         output_file.write(s)
 
 
-def compile_one_config(config_name: str, delta_config, compile_num_cores: int = 0):
-    orig_config_path = script_dir / f"{config_name}.config"
+def compile_one_config(config_name: str, config_dict: dict, compile_num_cores: int = 0):
+    template_path = script_dir / "gem5_template.config"
+    orig_config_path = script_dir / "generated" / f"{config_name}.config"
     config_path = proj_dir / f".config"
-    # config_path = script_dir / f"{config_name}.config"
 
     # Prepare config files
-    if delta_config:
-        assert len(delta_config) == 2
-        text_delta, module_delta = delta_config
-        generate_config(text_delta, module_delta, orig_config_path, config_path)
-        print(f"@@@ Generate .config from {orig_config_path} with "
-              f"text_delta {text_delta}, module_delta {module_delta}")
-        target_vmlinux_name = f"vmlinux_{config_name}_{text_delta}_{module_delta}"
-    else:
-        print(f"@@@ Copy .config from {orig_config_path}")
-        shutil.copy(orig_config_path, config_path)
-        target_vmlinux_name = f"vmlinux_{config_name}"
+    if config_name not in config_dict:
+        print(f"Error: {config_name} not specified!!!")
+    generate_full_config(template_path, orig_config_path, config_dict[config_name])
+    print(f"@@@ Copy .config from {orig_config_path}")
+    shutil.copy(orig_config_path, config_path)
+    target_vmlinux_name = f"vmlinux_{config_name}"
 
     # Make
     make_cmd = "make -j" if compile_num_cores == 0 else f"make -j{compile_num_cores}"
@@ -84,32 +96,21 @@ def compile_one_config(config_name: str, delta_config, compile_num_cores: int = 
     default=0
 )
 def main(config_delta: bool, default_delta: bool, delta_list: str, num_cores: int):
+    config_dict = read_config_file(script_dir / "linux_config.toml")
+
     config_name_list = [
         # "gem5",
         # "gem5_protect",
-        "gem5_protect_module",
-        # "gem5_protect_both"
+        # "gem5_protect_module",
+        "gem5_protect_both"
     ]
 
-    delta_configs = []
-    if config_delta:
-        delta_configs.extend([
-            [6, 16],
-            # [1, 7],
-            # [25, 7],
-            # [8, 7]
-        ])
-
-    if default_delta:
-        delta_configs.append(None)
-
     for name in config_name_list:
-        for delta_config in delta_configs:
-            compile_one_config(
-                name,
-                delta_config,
-                num_cores
-            )
+        compile_one_config(
+            name,
+            config_dict,
+            num_cores
+        )
 
 
 if __name__ == '__main__':

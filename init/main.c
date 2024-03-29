@@ -569,6 +569,29 @@ static int __init unknown_bootoption(char *param, char *val,
 	return 0;
 }
 
+/*
+ * [Shixin] A dirty way to pass ASLR delta via boot parameters for fast test
+ */
+static int __init set_aslr_delta_arg(char *param, char *val,
+                               const char *unused, void *arg)
+{
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+    if (val && strcmp(param, "gem5_module_kaslr_delta") == 0) {
+        kstrtoul(val, 10, &gem5_module_high_delta);
+        pr_info("@@@ %s %lx\n", param, gem5_module_high_delta);
+    }
+#endif
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+    if (val && strcmp(param, "gem5_user_aslr_delta") == 0) {
+        unsigned long delta = 0;
+        kstrtoul(val, 10, &delta);
+        gem5_user_high_offset = gem5_aslr_get_offset(delta);
+        pr_info("@@@ %s %lx\n", param, gem5_user_high_offset);
+    }
+#endif
+    return 0;
+}
+
 static int __init init_setup(char *str)
 {
 	unsigned int i;
@@ -907,6 +930,14 @@ void start_kernel(void)
 				  __stop___param - __start___param,
 				  -1, -1, NULL, &unknown_bootoption);
 	print_unknown_bootoptions();
+
+    /* [Shixin] A dirty way to pass ASLR delta via boot parameters for fast test */
+#if defined(CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH) || defined(CONFIG_GEM5_ASLR_PROTECTION_HIGH)
+    if (!IS_ERR_OR_NULL(after_dashes))
+        after_dashes = parse_args("Setting aslr delta args", after_dashes, NULL, 0, -1, -1,
+                   NULL, set_aslr_delta_arg);
+#endif
+
 	if (!IS_ERR_OR_NULL(after_dashes))
 		parse_args("Setting init args", after_dashes, NULL, 0, -1, -1,
 			   NULL, set_init_arg);

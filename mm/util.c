@@ -539,23 +539,33 @@ unsigned long vm_mmap_pgoff(struct file *file, unsigned long addr,
 	unsigned long populate;
 	LIST_HEAD(uf);
 
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
     unsigned long offset = gem5_aslr_offset(addr);
     unsigned long delta_pte = gem5_aslr_delta_pte_from_offset(offset);
-
     addr = gem5_aslr_remove_rand_offset(addr);
+#endif
 
 	ret = security_mmap_file(file, prot, flag);
 	if (!ret) {
 		if (mmap_write_lock_killable(mm))
 			return -EINTR;
-		ret = do_mmap(file, addr, len, prot, flag, delta_pte, pgoff, &populate,
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+        ret = do_mmap(file, addr, len, prot, flag, delta_pte, pgoff, &populate,
 			      &uf);
+#else
+        ret = do_mmap(file, addr, len, prot, flag, 0, pgoff, &populate,
+                      &uf);
+#endif
 		mmap_write_unlock(mm);
 		userfaultfd_unmap_complete(mm, &uf);
 		if (populate)
 			mm_populate(ret, populate);
     }
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
 	return ret | offset;
+#else
+    return ret;
+#endif
 }
 
 unsigned long vm_mmap(struct file *file, unsigned long addr,

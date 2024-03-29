@@ -58,7 +58,9 @@ pgprot_t vm_get_page_prot(unsigned long vm_flags)
 	val = __sme_set(val);
 	if (val & _PAGE_PRESENT)
 		val &= __supported_pte_mask;
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
     val |= (vm_flags & GEM5_ASLR_GET_PTE_DELTA_MASK);
+#endif
 	return __pgprot(val);
 }
 EXPORT_SYMBOL(vm_get_page_prot);

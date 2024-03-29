@@ -3068,13 +3068,6 @@ config GEM5_KASLR_MODULE_ALIGN_BIT
     help
       [Shixin] This value puts the alignment restrictions on kernel module ASLR offset protected by our defense.
 
-config GEM5_KASLR_MODULE_DELTA
-	hex "gem5 simulation: KALSR module delta"
-	default 0
-	range 0 31
-	help
-	  [Shixin] This value set KASLR random delta for kernel modules when emulating KASLR in gem5.
-
 config GEM5_KASLR_MODULE_FINE_GRAINED
 	bool "gem5 simulation: use different KASLR delta for different kernel modules"
 	depends on GEM5_KASLR_MODULE_PROTECTION_HIGH
@@ -3103,10 +3096,11 @@ config GEM5_ASLR_ALIGN_BIT
     help
       [Shixin] This value puts the alignment restrictions on user ASLR offset protected by our defense.
 
-config GEM5_ASLR_DELTA
-	hex "gem5 simulation: user ASLR delta"
-	default 0
-	range 0 31
+config GEM5_ASLR_FINE_GRAINED
+	bool "gem5 simulation: use different ASLR delta for different user programs"
+	depends on GEM5_ASLR_PROTECTION_HIGH
+	default n
 	help
-	  [Shixin] This value set ASLR random delta for user programs.
+	  [Shixin] This enables randomizing the virtual addresses of different user programs with
+	  different offsets.
 

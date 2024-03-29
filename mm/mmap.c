@@ -98,7 +98,9 @@ void vma_set_page_prot(struct vm_area_struct *vma)
 		vm_flags &= ~VM_SHARED;
 		vm_page_prot = vm_pgprot_modify(vm_page_prot, vm_flags);
 	}
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
     pgprot_val(vm_page_prot) |= (vm_flags & GEM5_ASLR_GET_PTE_DELTA_MASK);
+#endif
 	/* remove_protection_ptes reads vma->vm_page_prot without mmap_lock */
 	WRITE_ONCE(vma->vm_page_prot, vm_page_prot);
 }
@@ -3160,8 +3162,10 @@ int vm_brk_flags(unsigned long addr, unsigned long request, unsigned long flags)
 	int ret;
 	bool populate;
 	LIST_HEAD(uf);
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
     unsigned long delta_pte = gem5_aslr_delta_pte_from_addr(addr);
     addr = gem5_aslr_remove_rand_offset(addr);
+#endif
 	VMA_ITERATOR(vmi, mm, addr);
 
 	len = PAGE_ALIGN(request);
@@ -3186,7 +3190,11 @@ int vm_brk_flags(unsigned long addr, unsigned long request, unsigned long flags)
 		goto munmap_failed;
 
 	vma = vma_prev(&vmi);
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
 	ret = do_brk_flags(&vmi, vma, addr, len, flags | delta_pte);
+#else
+    ret = do_brk_flags(&vmi, vma, addr, len, flags);
+#endif
 	populate = ((mm->def_flags & VM_LOCKED) != 0);
 	mmap_write_unlock(mm);
 	userfaultfd_unmap_complete(mm, &uf);

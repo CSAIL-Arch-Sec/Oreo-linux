@@ -24,6 +24,12 @@
 
 #include "physaddr.h"
 
+// [Shixin] A dirty way to pass ASLR delta via boot parameters for fast test
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+unsigned long gem5_user_high_offset __ro_after_init = 0;
+EXPORT_SYMBOL(gem5_user_high_offset);
+#endif
+
 struct va_alignment __read_mostly va_align = {
 	.flags = -1,
 };

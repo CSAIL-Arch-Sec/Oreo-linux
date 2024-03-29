@@ -1131,9 +1131,11 @@ out_free_interp:
 				load_bias = ELF_ET_DYN_BASE;
 				if (current->flags & PF_RANDOMIZE) {
                     // TODO: Fix the dirty test code here later!
-//                    load_bias += arch_mmap_rnd();
-//                    load_bias += gem5_aslr_get_offset(CONFIG_GEM5_ASLR_DELTA);
-                    load_bias += strcmp(bprm->file->f_path.dentry->d_name.name, "hello") == 0 ? 0x1010000000000 : 0; // 0x1010000000000 : 0; // 0x1fd // 0x1000000000000; // arch_mmap_rnd();
+                    load_bias += arch_mmap_rnd();
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+//                    load_bias += gem5_user_high_offset;
+                    load_bias += strcmp(bprm->file->f_path.dentry->d_name.name, "hello") == 0 ? gem5_user_high_offset : 0; // 0x1010000000000 : 0; // 0x1fd // 0x1000000000000; // arch_mmap_rnd();
+#endif
                 }
 				alignment = maximum_alignment(elf_phdata, elf_ex->e_phnum);
 				if (alignment)

@@ -47,3 +47,5 @@ RUN ln -s /usr/local/bin/python3.9 /usr/bin/python3.9
 # TODO: Download a linux image somewhere
 
 #RUN poetry init
+
+ENV TZ="America/New_York"

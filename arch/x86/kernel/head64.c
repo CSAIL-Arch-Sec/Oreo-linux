@@ -249,13 +249,10 @@ unsigned long __head __startup_64(unsigned long physaddr,
 		pud[510] = 0;
 		pud[511] = 0;
 
+        // [Shixin] i = 0 if CONFIG_GEM5_KASLR_PROTECTION_HIGH since we change definition of pud_index!!
 		i = pud_index(text_base);
 		pgtable_flags = _KERNPG_TABLE_NOENC - __START_KERNEL_map + load_delta;
-#ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH
-		pud[0] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt);
-#else
 		pud[i] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt);
-#endif
 		pud[511] = pgtable_flags + SYM_ABS_VAL(level2_fixmap_pgt);
 	} else {
 		pud[510] += load_delta;

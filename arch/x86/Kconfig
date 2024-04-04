@@ -3104,3 +3104,10 @@ config GEM5_ASLR_FINE_GRAINED
 	  [Shixin] This enables randomizing the virtual addresses of different user programs with
 	  different offsets.
 
+
+config GEM5_KASLR_PROTECTION_HIGH_KVM
+	bool "gem5 simulation: enable KASLR protection while using kvm"
+	depends on GEM5_KASLR_PROTECTION_HIGH
+	default n
+	help
+	  [Shixin] This enables kvm to run kernel with kernel text ASLR protection turned on.

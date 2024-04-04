@@ -253,6 +253,13 @@ unsigned long __head __startup_64(unsigned long physaddr,
 		i = pud_index(text_base);
 		pgtable_flags = _KERNPG_TABLE_NOENC - __START_KERNEL_map + load_delta;
 		pud[i] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt);
+
+        // [Shixin] Dirty fix to enable boot with kvm when protecting text KASLR and delta != 0.
+        //  A kernel module would be used to clear this entry after boot and switch to O3 in gem5.
+#ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH_KVM
+        pud[(text_base >> PUD_SHIFT) & (PTRS_PER_PUD - 1)] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt);
+#endif
+
 		pud[511] = pgtable_flags + SYM_ABS_VAL(level2_fixmap_pgt);
 	} else {
 		pud[510] += load_delta;

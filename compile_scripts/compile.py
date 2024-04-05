@@ -102,7 +102,11 @@ def main(config_delta: bool, default_delta: bool, delta_list: str, num_cores: in
         # "gem5",
         # "gem5_protect",
         # "gem5_protect_module",
-        "gem5_protect_both"
+        # "gem5_protect_both",
+        # "gem5_protect_all",
+        # "gem5_protect_kvm",
+        "gem5_protect_both_kvm",
+        # "gem5_protect_all_kvm",
     ]
 
     for name in config_name_list:

@@ -249,15 +249,17 @@ unsigned long __head __startup_64(unsigned long physaddr,
 		pud[510] = 0;
 		pud[511] = 0;
 
-        // [Shixin] i = 0 if CONFIG_GEM5_KASLR_PROTECTION_HIGH since we change definition of pud_index!!
+        // [Shixin] There must be i = 0 if CONFIG_GEM5_KASLR_PROTECTION_HIGH since we change definition of pud_index!!
 		i = pud_index(text_base);
 		pgtable_flags = _KERNPG_TABLE_NOENC - __START_KERNEL_map + load_delta;
 		pud[i] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt);
 
         // [Shixin] Dirty fix to enable boot with kvm when protecting text KASLR and delta != 0.
-        //  A kernel module would be used to clear this entry after boot and switch to O3 in gem5.
+        //  After switch to O3, these entries are not used for access nor security check.
+        //  These entries are all filled with the same content, so do not leak secret.
 #ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH_KVM
-        pud[(text_base >> PUD_SHIFT) & (PTRS_PER_PUD - 1)] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt);
+        for (int j = 2; j < 511; j += 2)
+            pud[j] = pgtable_flags + SYM_ABS_VAL(level2_kernel_pgt);
 #endif
 
 		pud[511] = pgtable_flags + SYM_ABS_VAL(level2_fixmap_pgt);

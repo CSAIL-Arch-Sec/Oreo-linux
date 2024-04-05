@@ -40,10 +40,11 @@ do {							\
 static unsigned long module_load_offset;
 
 // [Shixin] A dirty way to pass ASLR delta via boot parameters for fast test
-#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-unsigned long gem5_module_high_delta __ro_after_init = 0;
-EXPORT_SYMBOL(gem5_module_high_delta);
-#endif
+unsigned long gem5_module_high_delta = 0;
+void set_gem5_module_high_delta(unsigned long v) {
+    gem5_module_high_delta = v;
+}
+EXPORT_SYMBOL(set_gem5_module_high_delta);
 
 /* Mutex protects the module_load_offset. */
 static DEFINE_MUTEX(module_kaslr_mutex);

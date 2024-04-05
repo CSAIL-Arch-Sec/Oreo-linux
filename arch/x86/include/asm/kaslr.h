@@ -12,11 +12,10 @@ static inline void kernel_randomize_memory(void) { }
 static inline void init_trampoline_kaslr(void) {}
 #endif /* CONFIG_RANDOMIZE_MEMORY */
 
-#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
 extern unsigned long gem5_module_high_delta;
-#endif
-#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
 extern unsigned long gem5_user_high_offset;
-#endif
+
+void set_gem5_module_high_delta(unsigned long v);
+void set_gem5_user_high_offset(unsigned long v);
 
 #endif

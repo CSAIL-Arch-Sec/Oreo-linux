@@ -750,6 +750,10 @@ static int elf_fdpic_map_file(struct elf_fdpic_params *params,
 	unsigned long stop;
 	int loop, ret;
 
+//    if (file) {
+//        pr_info("@@@ elf_fdpic_map_file %s\n", file->f_path.dentry->d_name.name);
+//    }
+
 	/* allocate a load map table */
 	nloads = 0;
 	for (loop = 0; loop < params->hdr.e_phnum; loop++)
@@ -927,6 +931,10 @@ static int elf_fdpic_map_file_constdisp_on_uclinux(
 	unsigned long load_addr, base = ULONG_MAX, top = 0, maddr = 0;
 	int loop, ret;
 
+//    if (file) {
+//        pr_info("@@@ elf_fdpic_map_file_constdisp_on_uclinux %s\n", file->f_path.dentry->d_name.name);
+//    }
+
 	load_addr = params->load_addr;
 	seg = params->loadmap->segs;
 
@@ -1010,6 +1018,10 @@ static int elf_fdpic_map_file_by_direct_mmap(struct elf_fdpic_params *params,
 	struct elf_phdr *phdr;
 	unsigned long load_addr, delta_vaddr;
 	int loop, dvset;
+
+//    if (file) {
+//        pr_info("@@@ elf_fdpic_map_file_by_direct_mmap %s\n", file->f_path.dentry->d_name.name);
+//    }
 
 	load_addr = params->load_addr;
 	delta_vaddr = 0;

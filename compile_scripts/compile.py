@@ -93,20 +93,20 @@ def compile_one_config(config_name: str, config_dict: dict, compile_num_cores: i
 @click.option(
     "--num-cores",
     type=click.INT,
-    default=0
+    default=10
 )
 def main(config_delta: bool, default_delta: bool, delta_list: str, num_cores: int):
     config_dict = read_config_file(script_dir / "linux_config.toml")
 
     config_name_list = [
-        # "gem5",
+        "gem5",
         # "gem5_protect",
         # "gem5_protect_module",
         # "gem5_protect_both",
         # "gem5_protect_all",
         # "gem5_protect_kvm",
-        "gem5_protect_both_kvm",
-        # "gem5_protect_all_kvm",
+        # "gem5_protect_both_kvm",
+        "gem5_protect_all_kvm",
     ]
 
     for name in config_name_list:

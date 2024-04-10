@@ -13,7 +13,7 @@ static inline void init_trampoline_kaslr(void) {}
 #endif /* CONFIG_RANDOMIZE_MEMORY */
 
 extern unsigned long gem5_module_high_delta;
-extern unsigned long gem5_user_high_offset;
+extern unsigned long long gem5_user_high_offset;
 
 void set_gem5_module_high_delta(unsigned long v);
 void set_gem5_user_high_offset(unsigned long v);

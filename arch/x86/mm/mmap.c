@@ -25,9 +25,10 @@
 #include "physaddr.h"
 
 // [Shixin] A dirty way to pass ASLR delta via boot parameters for fast test
-unsigned long gem5_user_high_offset = 0;
+unsigned long long gem5_user_high_offset = 0;
 void set_gem5_user_high_offset(unsigned long v) {
-    gem5_user_high_offset = v;
+    gem5_user_high_offset = gem5_aslr_get_offset(((unsigned long long) v));
+    pr_info("@@@ gem5_user_high_offset %llx %lx\n", gem5_user_high_offset, v);
 }
 EXPORT_SYMBOL(set_gem5_user_high_offset);
 

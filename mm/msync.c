@@ -37,6 +37,10 @@ SYSCALL_DEFINE3(msync, unsigned long, start, size_t, len, int, flags)
 	int unmapped_error = 0;
 	int error = -EINVAL;
 
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    unsigned long unmasked_start = start;
+    start = gem5_aslr_remove_rand_offset(start);
+
 	start = untagged_addr(start);
 
 	if (flags & ~(MS_ASYNC | MS_INVALIDATE | MS_SYNC))
@@ -61,6 +65,14 @@ SYSCALL_DEFINE3(msync, unsigned long, start, size_t, len, int, flags)
 	 */
 	mmap_read_lock(mm);
 	vma = find_vma(mm, start);
+
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+    if (vma && vma_check_gem5_aslr_addr(vma, unmasked_start) != 0) {
+        pr_info("@@@ msync addr %lx has incorrect delta\n", unmasked_start);
+        vma = NULL;
+    }
+#endif
+
 	for (;;) {
 		struct file *file;
 		loff_t fstart, fend;

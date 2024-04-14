@@ -105,6 +105,23 @@ void vma_set_page_prot(struct vm_area_struct *vma)
 	WRITE_ONCE(vma->vm_page_prot, vm_page_prot);
 }
 
+/* [Shixin] Check whether a user address has correct ASLR protection offset */
+int vma_check_gem5_aslr_addr(struct vm_area_struct *vma, unsigned long addr)
+{
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+    unsigned long addr_delta_pte = gem5_aslr_delta_pte_from_addr(addr);
+    unsigned long vma_delta_pte = pgprot_val(vma->vm_page_prot) & GEM5_ASLR_GET_PTE_DELTA_MASK;
+    if (addr_delta_pte == vma_delta_pte) return 0;
+    else {
+        pr_info("@@@ vma_check_gem5_addr fail with addr %lx addr_delta_pte %lx vma_delta_pte %lx\n",
+                addr, addr_delta_pte, vma_delta_pte);
+        return -1;
+    }
+#else
+    return 0;
+#endif
+}
+
 /*
  * Requires inode->i_mapping->i_mmap_rwsem
  */
@@ -885,6 +902,8 @@ struct vm_area_struct *vma_merge(struct vma_iterator *vmi, struct mm_struct *mm,
 	unsigned long vma_end = end;
 	pgoff_t pglen = (end - addr) >> PAGE_SHIFT;
 	long adj_start = 0;
+
+    // TODO: Double check here!!!
 
 	/*
 	 * We later require that vma->vm_flags == vm_flags,
@@ -2647,6 +2666,49 @@ int do_vmi_munmap(struct vma_iterator *vmi, struct mm_struct *mm,
 	return do_vmi_align_munmap(vmi, vma, mm, start, end, uf, unlock);
 }
 
+/* This is almost the same to do_vmi_munmap
+ * The only differece is that this takes unmasked address as input */
+int do_vmi_munmap_unmasked(struct vma_iterator *vmi, struct mm_struct *mm,
+                  unsigned long start, size_t len, struct list_head *uf,
+                  bool unlock)
+{
+    unsigned long end;
+    struct vm_area_struct *vma;
+
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    unsigned long unmasked_start = start;
+    start = gem5_aslr_remove_rand_offset(start);
+
+    if ((offset_in_page(start)) || start > TASK_SIZE || len > TASK_SIZE-start)
+        return -EINVAL;
+
+    end = start + PAGE_ALIGN(len);
+    if (end == start)
+        return -EINVAL;
+
+    // [Shixin] In x86 this seems to be an empty function
+    /* arch_unmap() might do unmaps itself.  */
+    arch_unmap(mm, start, end);
+
+    /* Find the first overlapping VMA */
+    vma = vma_find(vmi, end);
+
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+    if (vma && vma_check_gem5_aslr_addr(vma, unmasked_start) != 0) {
+        pr_info("@@@ do_vmi_munmap_unmasked addr %lx has incorrect delta\n", unmasked_start);
+        vma = NULL;
+    }
+#endif
+
+    if (!vma) {
+        if (unlock)
+            mmap_write_unlock(mm);
+        return 0;
+    }
+
+    return do_vmi_align_munmap(vmi, vma, mm, start, end, uf, unlock);
+}
+
 /* do_munmap() - Wrapper function for non-maple tree aware do_munmap() calls.
  * @mm: The mm_struct
  * @start: The start address to munmap
@@ -2925,14 +2987,15 @@ static int __vm_munmap(unsigned long start, size_t len, bool unlock)
 	struct mm_struct *mm = current->mm;
 	LIST_HEAD(uf);
 
-    start = gem5_aslr_remove_rand_offset(start);
-
-    VMA_ITERATOR(vmi, mm, start);
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    VMA_ITERATOR(vmi, mm, gem5_aslr_remove_rand_offset(start));
 
 	if (mmap_write_lock_killable(mm))
 		return -EINTR;
 
-	ret = do_vmi_munmap(&vmi, mm, start, len, &uf, unlock);
+    // [Shixin] Pass unmasked address to do_vmi_munmap_unmasked
+    // Applying mask and check delta is done in do_vmi_munmap_unmasked
+	ret = do_vmi_munmap_unmasked(&vmi, mm, start, len, &uf, unlock);
 	if (ret || !unlock)
 		mmap_write_unlock(mm);
 
@@ -2949,6 +3012,8 @@ EXPORT_SYMBOL(vm_munmap);
 SYSCALL_DEFINE2(munmap, unsigned long, addr, size_t, len)
 {
 	addr = untagged_addr(addr);
+    // [Shixin] gem5_aslr_remove_rand_offset is applied in __vm_munmap
+    // TODO: Missing security check here!
 	return __vm_munmap(addr, len, true);
 }
 

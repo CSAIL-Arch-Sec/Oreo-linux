@@ -122,6 +122,10 @@ long strncpy_from_user(char *dst, const char __user *src, long count)
 
 	max_addr = TASK_SIZE_MAX;
 	src_addr = (unsigned long)untagged_addr(src);
+
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    src_addr = gem5_aslr_remove_rand_offset(src_addr);
+
 	if (likely(src_addr < max_addr)) {
 		unsigned long max = max_addr - src_addr;
 		long retval;

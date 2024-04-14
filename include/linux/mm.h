@@ -3434,6 +3434,8 @@ static inline bool range_in_vma(struct vm_area_struct *vma,
 #ifdef CONFIG_MMU
 pgprot_t vm_get_page_prot(unsigned long vm_flags);
 void vma_set_page_prot(struct vm_area_struct *vma);
+// [Shixin] Check whether a user address has correct ASLR protection offset
+int vma_check_gem5_aslr_addr(struct vm_area_struct *vma, unsigned long addr);
 #else
 static inline pgprot_t vm_get_page_prot(unsigned long vm_flags)
 {
@@ -3442,6 +3444,10 @@ static inline pgprot_t vm_get_page_prot(unsigned long vm_flags)
 static inline void vma_set_page_prot(struct vm_area_struct *vma)
 {
 	vma->vm_page_prot = vm_get_page_prot(vma->vm_flags);
+}
+static inline int vma_check_gem5_aslr_addr(struct vm_area_struct *vma, unsigned long addr)
+{
+    return 0;
 }
 #endif
 

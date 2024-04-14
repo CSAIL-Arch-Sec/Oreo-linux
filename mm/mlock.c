@@ -580,6 +580,10 @@ static __must_check int do_mlock(unsigned long start, size_t len, vm_flags_t fla
 
 	start = untagged_addr(start);
 
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // It is ok to not check delta for mlock since it does not access memory
+    start = gem5_aslr_remove_rand_offset(start);
+
 	if (!can_do_mlock())
 		return -EPERM;
 
@@ -642,6 +646,10 @@ SYSCALL_DEFINE2(munlock, unsigned long, start, size_t, len)
 	int ret;
 
 	start = untagged_addr(start);
+
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // It is ok to not check delta for munlock since it does not access memory
+    start = gem5_aslr_remove_rand_offset(start);
 
 	len = PAGE_ALIGN(len + (offset_in_page(start)));
 	start &= PAGE_MASK;

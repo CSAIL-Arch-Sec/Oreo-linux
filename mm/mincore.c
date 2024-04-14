@@ -190,7 +190,19 @@ static long do_mincore(unsigned long addr, unsigned long pages, unsigned char *v
 	unsigned long end;
 	int err;
 
+    // [Shixin] Check delta in vma_lookup, and use masked addr in remained part
+    unsigned long unmasked_addr = addr;
+    addr = gem5_aslr_remove_rand_offset(addr);
+
 	vma = vma_lookup(current->mm, addr);
+
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+    if (vma && vma_check_gem5_aslr_addr(vma, unmasked_addr) != 0) {
+        pr_info("@@@ do_mincore error: addr %lx has incorrect delta\n", unmasked_addr);
+        vma = NULL;
+    }
+#endif
+
 	if (!vma)
 		return -ENOMEM;
 	end = min(vma->vm_end, addr + (pages << PAGE_SHIFT));
@@ -235,6 +247,8 @@ SYSCALL_DEFINE3(mincore, unsigned long, start, size_t, len,
 	long retval;
 	unsigned long pages;
 	unsigned char *tmp;
+
+    // [Shixin] Remove random non-canonical bits of user ASLR protection only in do_mincore
 
 	start = untagged_addr(start);
 

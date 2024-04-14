@@ -97,7 +97,9 @@ static int task_set_syscall_user_dispatch(struct task_struct *task, unsigned lon
 		 * otherwise an untagged tracer will always fail to set a
 		 * tagged tracees selector.
 		 */
-		if (selector && !access_ok(untagged_addr(selector), sizeof(*selector)))
+        // [Shixin] Remove random non-canonical bits of user ASLR protection
+        // TODO: Double check whether mask is needed here!
+		if (selector && !access_ok(gem5_aslr_remove_rand_offset(untagged_addr(selector)), sizeof(*selector)))
 			return -EFAULT;
 
 		break;

@@ -930,6 +930,17 @@ SYSCALL_DEFINE5(mremap, unsigned long, addr, unsigned long, old_len,
 	 */
 	addr = untagged_addr(addr);
 
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+    unsigned long unmasked_addr = addr;
+    if (gem5_aslr_offset(addr) != gem5_aslr_offset(new_addr)) {
+        pr_info("@@@ mremap fail since addr %lx and new_addr %lx have different delta\n", addr, new_addr);
+        return ret;
+    }
+    addr = gem5_aslr_remove_rand_offset(addr);
+    new_addr = gem5_aslr_remove_rand_offset(new_addr);
+#endif
+
 	if (flags & ~(MREMAP_FIXED | MREMAP_MAYMOVE | MREMAP_DONTUNMAP))
 		return ret;
 
@@ -962,6 +973,14 @@ SYSCALL_DEFINE5(mremap, unsigned long, addr, unsigned long, old_len,
 	if (mmap_write_lock_killable(current->mm))
 		return -EINTR;
 	vma = vma_lookup(mm, addr);
+
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+    if (vma && vma_check_gem5_aslr_addr(vma, unmasked_addr) != 0) {
+        pr_info("@@@ mremap addr %lx has incorrect delta\n", unmasked_addr);
+        vma = NULL;
+    }
+#endif
+
 	if (!vma) {
 		ret = -EFAULT;
 		goto out;

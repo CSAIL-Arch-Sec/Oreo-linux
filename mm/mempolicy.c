@@ -939,6 +939,10 @@ static long do_get_mempolicy(int *policy, nodemask_t *nmask,
 	struct vm_area_struct *vma = NULL;
 	struct mempolicy *pol = current->mempolicy, *pol_refcount = NULL;
 
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    unsigned long unmasked_addr = addr;
+    addr = gem5_aslr_remove_rand_offset(addr);
+
 	if (flags &
 		~(unsigned long)(MPOL_F_NODE|MPOL_F_ADDR|MPOL_F_MEMS_ALLOWED))
 		return -EINVAL;
@@ -961,6 +965,14 @@ static long do_get_mempolicy(int *policy, nodemask_t *nmask,
 		 */
 		mmap_read_lock(mm);
 		vma = vma_lookup(mm, addr);
+
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+        if (vma && vma_check_gem5_aslr_addr(vma, unmasked_addr) != 0) {
+            pr_info("@@@ msync addr %lx has incorrect delta\n", unmasked_addr);
+            vma = NULL;
+        }
+#endif
+
 		if (!vma) {
 			mmap_read_unlock(mm);
 			return -EFAULT;
@@ -1271,6 +1283,10 @@ static long do_mbind(unsigned long start, unsigned long len,
 	int ret;
 	LIST_HEAD(pagelist);
 
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    unsigned long unmasked_start = start;
+    start = gem5_aslr_remove_rand_offset(start);
+
 	if (flags & ~(unsigned long)MPOL_MF_VALID)
 		return -EINVAL;
 	if ((flags & MPOL_MF_MOVE_ALL) && !capable(CAP_SYS_NICE))
@@ -1341,6 +1357,12 @@ static long do_mbind(unsigned long start, unsigned long len,
 	vma_iter_init(&vmi, mm, start);
 	prev = vma_prev(&vmi);
 	for_each_vma_range(vmi, vma, end) {
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+        if (vma && vma_check_gem5_aslr_addr(vma, unmasked_start) != 0) {
+            pr_info("@@@ do_mbind addr %lx has incorrect delta\n", unmasked_start);
+            vma = NULL;
+        }
+#endif
 		err = mbind_range(&vmi, vma, &prev, start, end, new);
 		if (err)
 			break;
@@ -1490,6 +1512,9 @@ static long kernel_mbind(unsigned long start, unsigned long len,
 	int err;
 
 	start = untagged_addr(start);
+
+    // [Shixin] Applying mask and check delta is done in do_mbind
+
 	err = sanitize_mpol_flags(&lmode, &mode_flags);
 	if (err)
 		return err;
@@ -1509,6 +1534,11 @@ SYSCALL_DEFINE4(set_mempolicy_home_node, unsigned long, start, unsigned long, le
 	struct mempolicy *new, *old;
 	unsigned long end;
 	int err = -ENOENT;
+
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    unsigned long unmasked_start = start;
+    start = gem5_aslr_remove_rand_offset(start);
+
 	VMA_ITERATOR(vmi, mm, start);
 
 	start = untagged_addr(start);
@@ -1537,6 +1567,12 @@ SYSCALL_DEFINE4(set_mempolicy_home_node, unsigned long, start, unsigned long, le
 	mmap_write_lock(mm);
 	prev = vma_prev(&vmi);
 	for_each_vma_range(vmi, vma, end) {
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+        if (vma && vma_check_gem5_aslr_addr(vma, unmasked_start) != 0) {
+            pr_info("@@@ set_mempolicy_home_node addr %lx has incorrect delta\n", unmasked_start);
+            vma = NULL;
+        }
+#endif
 		/*
 		 * If any vma in the range got policy other than MPOL_BIND
 		 * or MPOL_PREFERRED_MANY we return error. We don't reset
@@ -1712,6 +1748,8 @@ static int kernel_get_mempolicy(int __user *policy,
 		return -EINVAL;
 
 	addr = untagged_addr(addr);
+
+    // [Shixin] Applying mask and checking delta is done in do_get_mempolicy
 
 	err = do_get_mempolicy(&pval, &nodes, addr, flags);
 

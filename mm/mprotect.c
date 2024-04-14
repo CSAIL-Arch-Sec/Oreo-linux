@@ -699,6 +699,8 @@ static int do_mprotect_pkey(unsigned long start, size_t len,
 	struct mmu_gather tlb;
 	struct vma_iterator vmi;
 
+    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    unsigned long unmasked_start = start;
     start = gem5_aslr_remove_rand_offset(start);
 
 	start = untagged_addr(start);
@@ -734,6 +736,14 @@ static int do_mprotect_pkey(unsigned long start, size_t len,
 	vma_iter_init(&vmi, current->mm, start);
 	vma = vma_find(&vmi, end);
 	error = -ENOMEM;
+
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+    if (vma && vma_check_gem5_aslr_addr(vma, unmasked_start) != 0) {
+        pr_info("@@@ do_mprotect_pkey addr %lx has incorrect delta\n", unmasked_start);
+        vma = NULL;
+    }
+#endif
+
 	if (!vma)
 		goto out;
 

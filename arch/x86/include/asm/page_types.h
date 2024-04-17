@@ -51,7 +51,7 @@
 
 #if defined(CONFIG_GEM5_KASLR_PROTECTION_HIGH) || defined(CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH)
 /* TODO: This take bits that are used by Linux, which is not ok (especially in user space). FIXME! */
-#define gem5_kaslr_get_delta_pte(delta) (((delta & 0x7f) << 52) + ((delta & 0x180) << 9))
+#define gem5_kaslr_get_delta_pte(delta) (((delta & 0x7f) << 52) + ((delta & 0x180) << 2))
 #endif
 
 /* TODO: Optimize the implementation here! */

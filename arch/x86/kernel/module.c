@@ -80,13 +80,12 @@ void *module_alloc(unsigned long size)
 	if (PAGE_ALIGN(size) > MODULES_LEN)
 		return NULL;
 
-#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-
 #ifdef CONFIG_GEM5_KASLR_MODULE_FINE_GRAINED
-	uint64_t module_delta = get_random_u32_inclusive(0, (1 << (CONFIG_GEM5_KASLR_MODULE_MAX_BIT - CONFIG_GEM5_KASLR_MODULE_ALIGN_BIT)) - 1);
+    uint64_t module_delta = get_random_u32_inclusive(0, (1 << (CONFIG_GEM5_KASLR_MODULE_MAX_BIT - CONFIG_GEM5_KASLR_MODULE_ALIGN_BIT)) - 1);
 #else
-	uint64_t module_delta = gem5_module_high_delta;
+    uint64_t module_delta = gem5_module_high_delta;
 #endif
+#ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
 	void *masked_p = __vmalloc_node_range(size, MODULE_ALIGN,
 			         MODULES_VADDR + get_module_load_offset(),
 			         MODULES_END,
@@ -103,8 +102,8 @@ void *module_alloc(unsigned long size)
 	}
 #else
 	p = __vmalloc_node_range(size, MODULE_ALIGN,
-				 MODULES_VADDR + get_module_load_offset(),
-				 MODULES_END, gfp_mask, PAGE_KERNEL,
+				 (MODULES_VADDR + get_module_load_offset()) | ((module_delta << CONFIG_GEM5_KASLR_MODULE_ALIGN_BIT) & GEM5_KASLR_MODULE_GET_DELTA_MASK),
+				 MODULES_END | ((module_delta << CONFIG_GEM5_KASLR_MODULE_ALIGN_BIT) & GEM5_KASLR_MODULE_GET_DELTA_MASK), gfp_mask, PAGE_KERNEL,
 				 VM_FLUSH_RESET_PERMS | VM_DEFER_KMEMLEAK,
 				 NUMA_NO_NODE, __builtin_return_address(0));
 

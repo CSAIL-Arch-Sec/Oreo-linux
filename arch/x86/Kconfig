@@ -3056,14 +3056,12 @@ config GEM5_KASLR_MODULE_PROTECTION_HIGH
 
 config GEM5_KASLR_MODULE_MAX_BIT
     int "gem5 simulation: maximum bits to be randomized"
-    depends on GEM5_KASLR_MODULE_PROTECTION_HIGH
     default 30
     help
       [Shixin] This value puts the maximum bits to be randomized of kernel module address.
 
 config GEM5_KASLR_MODULE_ALIGN_BIT
     int "gem5 simulation: Alignment bits to which kernel virtual address should be aligned"
-    depends on GEM5_KASLR_MODULE_PROTECTION_HIGH
     default 30
     help
       [Shixin] This value puts the alignment restrictions on kernel module ASLR offset protected by our defense.

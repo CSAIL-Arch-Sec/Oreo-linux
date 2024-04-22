@@ -1420,7 +1420,7 @@ static int load_elf_library(struct file *file)
 	int retval, error, i, j;
 	struct elfhdr elf_ex;
 
-    pr_info("@@@ load_elf_library: %s\n", file->f_path.dentry->d_name.name);
+//    pr_info("@@@ load_elf_library: %s\n", file->f_path.dentry->d_name.name);
 
 	error = -ENOEXEC;
 	retval = elf_read(file, &elf_ex, sizeof(elf_ex), 0);

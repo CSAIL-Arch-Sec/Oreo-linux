@@ -39,16 +39,17 @@ def read_trace(input_path: Path, base1: int, base2: int, func_map: dict):
     i = 0
     for line in lines:
         i += 1
-        x = re.match(r"@@@ \(([\da-z]+)=>([\da-z]+)\)", line)
+        x = re.match(r"(\d+)[-:]@@@ \(([\da-z]+)=>([\da-z]+)\)", line)
         if not x:
             continue
-        addr = int(x.group(1), 16)
+        idx = int(x.group(1))
+        addr = int(x.group(2), 16)
         if curr_addr == addr:
             continue
         curr_addr = addr
         func_name = find_func_name(addr, base1, base2, func_map)
         if func_name:
-            trace.append((i, addr, func_name))
+            trace.append((idx, addr, func_name))
 
     output_dir = input_path.parent
     output_name = input_path.name.split("-")[0] + "-ftrace.txt"
@@ -61,11 +62,11 @@ def read_trace(input_path: Path, base1: int, base2: int, func_map: dict):
 
 def main():
     func_map = read_func_map(proj_dir / "System.map")
-    read_trace(root_dir / "gem5-new" / "incorrect-grep.txt",
+    read_trace(root_dir / "gem5-new" / "incorrect-kgrep.txt",
                0xffffff8000000000, 0xffffffff80000000,
                func_map)
 
-    read_trace(root_dir / "gem5-new" / "correct-grep.txt",
+    read_trace(root_dir / "gem5-new" / "correct-kgrep.txt",
                0xffffff8000000000, 0xffffffff80000000,
                func_map)
 

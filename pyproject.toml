@@ -2,7 +2,7 @@
 name = "protect-kaslr"
 version = "0.1.0"
 description = ""
-authors = ["zhizhuoxin <shixins@umich.edu>"]
+authors = ["oreo <oreo.anonymous.artifact@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]

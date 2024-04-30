@@ -99,7 +99,7 @@ long strnlen_user(const char __user *str, long count)
 	max_addr = TASK_SIZE_MAX;
 	src_addr = (unsigned long)untagged_addr(str);
 
-    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // [Oreo] Remove random non-canonical bits of user ASLR protection
     src_addr = gem5_aslr_remove_rand_offset(src_addr);
 
 	if (likely(src_addr < max_addr)) {

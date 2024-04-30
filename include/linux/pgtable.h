@@ -76,7 +76,7 @@ static inline unsigned long pmd_index(unsigned long address)
 #endif
 
 #ifndef pud_index
-/* [Shixin] Always apply mask when index into pmd */
+/* [Oreo] Always apply mask when index into pmd */
 static inline unsigned long pud_index(unsigned long address)
 {
 	return (gem5_kaslr_mask(address) >> PUD_SHIFT) & (PTRS_PER_PUD - 1);

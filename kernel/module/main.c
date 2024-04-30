@@ -95,7 +95,7 @@ struct symsearch {
 static void __mod_update_bounds(enum mod_mem_type type __maybe_unused, void *base,
 				unsigned int size, struct mod_tree_root *tree)
 {
-	// [Shixin]
+	// [Oreo]
 	unsigned long min = gem5_kaslr_mask((unsigned long)base);
 	unsigned long max = min + size;
 
@@ -3273,7 +3273,7 @@ struct module *__module_address(unsigned long addr)
 	struct module *mod;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] module_addr_min and module_addr_max are masked
+	// [Oreo] module_addr_min and module_addr_max are masked
 	unsigned long masked_addr = gem5_kaslr_mask(addr);
 	if (masked_addr >= mod_tree.addr_min && masked_addr <= mod_tree.addr_max)
 		goto lookup;
@@ -3294,7 +3294,7 @@ lookup:
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
 	mod = mod_find(masked_addr, &mod_tree);
-	// [Shixin] Check delta after if find a mod
+	// [Oreo] Check delta after if find a mod
 	// TODO: Is this safe? This contains some secret-dependent check.
 	if (mod && !within_module(addr, mod)) {
 		mod = NULL;

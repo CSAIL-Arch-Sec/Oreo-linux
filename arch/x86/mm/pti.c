@@ -558,7 +558,7 @@ static void pti_clone_kernel_text(void)
 	 * clone the areas past rodata, they might contain secrets.
 	 */
 #ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH
-	// [Shixin] In our defense, use derandomized address to operate on page table
+	// [Oreo] In our defense, use derandomized address to operate on page table
 	// TODO: Double check when we need this and whether this is correct
 	unsigned long start = PFN_ALIGN(gem5_kaslr_remove_rand_offset(_text));
 	unsigned long end_clone  = (unsigned long)gem5_kaslr_remove_rand_offset(__end_rodata_aligned);

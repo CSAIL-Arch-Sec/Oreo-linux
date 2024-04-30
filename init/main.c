@@ -570,7 +570,7 @@ static int __init unknown_bootoption(char *param, char *val,
 }
 
 /*
- * [Shixin] A dirty way to pass ASLR delta via boot parameters for fast test
+ * [Oreo] A dirty way to pass ASLR delta via boot parameters for fast test
  */
 static int __init set_aslr_delta_arg(char *param, char *val,
                                const char *unused, void *arg)
@@ -929,7 +929,7 @@ void start_kernel(void)
 				  -1, -1, NULL, &unknown_bootoption);
 	print_unknown_bootoptions();
 
-    /* [Shixin] A dirty way to pass ASLR delta via boot parameters for fast test */
+    /* [Oreo] A dirty way to pass ASLR delta via boot parameters for fast test */
     if (!IS_ERR_OR_NULL(after_dashes))
         after_dashes = parse_args("Setting aslr delta args", after_dashes, NULL, 0, -1, -1,
                    NULL, set_aslr_delta_arg);

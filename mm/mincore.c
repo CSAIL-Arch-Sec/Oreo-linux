@@ -190,7 +190,7 @@ static long do_mincore(unsigned long addr, unsigned long pages, unsigned char *v
 	unsigned long end;
 	int err;
 
-    // [Shixin] Check delta in vma_lookup, and use masked addr in remained part
+    // [Oreo] Check delta in vma_lookup, and use masked addr in remained part
     unsigned long unmasked_addr = addr;
     addr = gem5_aslr_remove_rand_offset(addr);
 
@@ -248,7 +248,7 @@ SYSCALL_DEFINE3(mincore, unsigned long, start, size_t, len,
 	unsigned long pages;
 	unsigned char *tmp;
 
-    // [Shixin] Remove random non-canonical bits of user ASLR protection only in do_mincore
+    // [Oreo] Remove random non-canonical bits of user ASLR protection only in do_mincore
 
 	start = untagged_addr(start);
 

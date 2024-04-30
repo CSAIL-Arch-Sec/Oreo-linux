@@ -930,7 +930,7 @@ SYSCALL_DEFINE5(mremap, unsigned long, addr, unsigned long, old_len,
 	 */
 	addr = untagged_addr(addr);
 
-    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // [Oreo] Remove random non-canonical bits of user ASLR protection
 #ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
     unsigned long unmasked_addr = addr;
     if (gem5_aslr_offset(addr) != gem5_aslr_offset(new_addr)) {

@@ -699,7 +699,7 @@ static int do_mprotect_pkey(unsigned long start, size_t len,
 	struct mmu_gather tlb;
 	struct vma_iterator vmi;
 
-    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // [Oreo] Remove random non-canonical bits of user ASLR protection
     unsigned long unmasked_start = start;
     start = gem5_aslr_remove_rand_offset(start);
 

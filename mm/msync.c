@@ -37,7 +37,7 @@ SYSCALL_DEFINE3(msync, unsigned long, start, size_t, len, int, flags)
 	int unmapped_error = 0;
 	int error = -EINVAL;
 
-    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // [Oreo] Remove random non-canonical bits of user ASLR protection
     unsigned long unmasked_start = start;
     start = gem5_aslr_remove_rand_offset(start);
 

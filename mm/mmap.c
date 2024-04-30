@@ -105,7 +105,7 @@ void vma_set_page_prot(struct vm_area_struct *vma)
 	WRITE_ONCE(vma->vm_page_prot, vm_page_prot);
 }
 
-/* [Shixin] Check whether a user address has correct ASLR protection offset */
+/* [Oreo] Check whether a user address has correct ASLR protection offset */
 int vma_check_gem5_aslr_addr(struct vm_area_struct *vma, unsigned long addr)
 {
 #ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
@@ -2675,7 +2675,7 @@ int do_vmi_munmap_unmasked(struct vma_iterator *vmi, struct mm_struct *mm,
     unsigned long end;
     struct vm_area_struct *vma;
 
-    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // [Oreo] Remove random non-canonical bits of user ASLR protection
     unsigned long unmasked_start = start;
     start = gem5_aslr_remove_rand_offset(start);
 
@@ -2686,7 +2686,7 @@ int do_vmi_munmap_unmasked(struct vma_iterator *vmi, struct mm_struct *mm,
     if (end == start)
         return -EINVAL;
 
-    // [Shixin] In x86 this seems to be an empty function
+    // [Oreo] In x86 this seems to be an empty function
     /* arch_unmap() might do unmaps itself.  */
     arch_unmap(mm, start, end);
 
@@ -2987,13 +2987,13 @@ static int __vm_munmap(unsigned long start, size_t len, bool unlock)
 	struct mm_struct *mm = current->mm;
 	LIST_HEAD(uf);
 
-    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // [Oreo] Remove random non-canonical bits of user ASLR protection
     VMA_ITERATOR(vmi, mm, gem5_aslr_remove_rand_offset(start));
 
 	if (mmap_write_lock_killable(mm))
 		return -EINTR;
 
-    // [Shixin] Pass unmasked address to do_vmi_munmap_unmasked
+    // [Oreo] Pass unmasked address to do_vmi_munmap_unmasked
     // Applying mask and check delta is done in do_vmi_munmap_unmasked
 	ret = do_vmi_munmap_unmasked(&vmi, mm, start, len, &uf, unlock);
 	if (ret || !unlock)
@@ -3012,7 +3012,7 @@ EXPORT_SYMBOL(vm_munmap);
 SYSCALL_DEFINE2(munmap, unsigned long, addr, size_t, len)
 {
 	addr = untagged_addr(addr);
-    // [Shixin] gem5_aslr_remove_rand_offset is applied in __vm_munmap
+    // [Oreo] gem5_aslr_remove_rand_offset is applied in __vm_munmap
     // TODO: Missing security check here!
 	return __vm_munmap(addr, len, true);
 }

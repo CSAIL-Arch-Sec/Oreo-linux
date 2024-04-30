@@ -286,7 +286,7 @@ static int vmap_range_noflush(unsigned long addr, unsigned long end,
 	pgtbl_mod_mask mask = 0;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] TODO: Not needed?
+	// [Oreo] TODO: Not needed?
 	unsigned long size = end - addr;
 	addr = gem5_kaslr_mask(addr);
 	end = addr + size;
@@ -317,7 +317,7 @@ int ioremap_page_range(unsigned long addr, unsigned long end,
 	int err;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] TODO: Not needed?
+	// [Oreo] TODO: Not needed?
 	unsigned long size = end - addr;
 	addr = gem5_kaslr_mask(addr);
 	end = addr + size;
@@ -433,7 +433,7 @@ void __vunmap_range_noflush(unsigned long start, unsigned long end)
 	pgtbl_mod_mask mask = 0;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] TODO: I think we do not need mask here! DOUBLE CHECK!!!
+	// [Oreo] TODO: I think we do not need mask here! DOUBLE CHECK!!!
 	unsigned long size = end - start;
 	start = gem5_kaslr_mask(start);
 	end = start + size;
@@ -458,7 +458,7 @@ void __vunmap_range_noflush(unsigned long start, unsigned long end)
 void vunmap_range_noflush(unsigned long start, unsigned long end)
 {
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] TODO: I think we do not need mask here! DOUBLE CHECK!!!
+	// [Oreo] TODO: I think we do not need mask here! DOUBLE CHECK!!!
 	unsigned long size = end - start;
 	start = gem5_kaslr_mask(start);
 	end = start + size;
@@ -480,7 +480,7 @@ void vunmap_range_noflush(unsigned long start, unsigned long end)
 void vunmap_range(unsigned long addr, unsigned long end)
 {
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	unsigned long size = end - addr;
 	addr = gem5_kaslr_mask(addr);
 	end = addr + size;
@@ -618,7 +618,7 @@ int __vmap_pages_range_noflush(unsigned long addr, unsigned long end,
 	unsigned int i, nr = (end - addr) >> PAGE_SHIFT;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] TODO: I think we do not need mask here! DOUBLE CHECK!!!
+	// [Oreo] TODO: I think we do not need mask here! DOUBLE CHECK!!!
 	unsigned long size = end - addr;
 	addr = gem5_kaslr_mask(addr);
 	end = addr + size;
@@ -649,7 +649,7 @@ int vmap_pages_range_noflush(unsigned long addr, unsigned long end,
 		pgprot_t prot, struct page **pages, unsigned int page_shift)
 {
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	unsigned long size = end - addr;
 	addr = gem5_kaslr_mask(addr);
 	end = addr + size;
@@ -681,7 +681,7 @@ static int vmap_pages_range(unsigned long addr, unsigned long end,
 	int err;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	unsigned long size = end - addr;
 	addr = gem5_kaslr_mask(addr);
 	end = addr + size;
@@ -715,7 +715,7 @@ EXPORT_SYMBOL_GPL(is_vmalloc_or_module_addr);
  */
 struct page *vmalloc_to_page(const void *vmalloc_addr)
 {
-	// [Shixin] Do not need mask since this only do a page table walk,
+	// [Oreo] Do not need mask since this only do a page table walk,
 	// 	and we have mask inside the page index function.
 	unsigned long addr = (unsigned long) vmalloc_addr;
 	struct page *page = NULL;
@@ -893,7 +893,7 @@ static struct vmap_area *__find_vmap_area(unsigned long addr, struct rb_root *ro
 	addr = (unsigned long)kasan_reset_tag((void *)addr);
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	addr = gem5_kaslr_mask(addr);
 #endif
 
@@ -1923,7 +1923,7 @@ struct vmap_area *find_vmap_area(unsigned long addr)
 	struct vmap_area *va;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	addr = (const void *) (gem5_kaslr_mask(addr));
 #endif
 
@@ -1939,7 +1939,7 @@ static struct vmap_area *find_unlink_vmap_area(unsigned long addr)
 	struct vmap_area *va;
 
 	spin_lock(&vmap_area_lock);
-	// [Shixin] We do not need mask here since __find_vmap_area has mask.
+	// [Oreo] We do not need mask here since __find_vmap_area has mask.
 	va = __find_vmap_area(addr, &vmap_area_root);
 	if (va)
 		unlink_va(va, &vmap_area_root);
@@ -2412,7 +2412,7 @@ void vm_unmap_ram(const void *mem, unsigned int count)
 	struct vmap_area *va;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	mem = (const void *) (gem5_kaslr_mask(mem));
 #endif
 	addr = (unsigned long)kasan_reset_tag(mem);
@@ -2648,7 +2648,7 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 		unsigned long start, unsigned long end, int node,
 		gfp_t gfp_mask, const void *caller)
 {
-	// [Shixin] I think we do not need mask here!
+	// [Oreo] I think we do not need mask here!
 	struct vmap_area *va;
 	struct vm_struct *area;
 	unsigned long requested_size = size;
@@ -2697,7 +2697,7 @@ struct vm_struct *__get_vm_area_caller(unsigned long size, unsigned long flags,
 				       const void *caller)
 {
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	unsigned long end_start = end - start;
 	start = (const void *) (gem5_kaslr_mask(start));
 	end = start + end_start;
@@ -2749,7 +2749,7 @@ struct vm_struct *find_vm_area(const void *addr)
 	struct vmap_area *va;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	addr = (const void *) (gem5_kaslr_mask(addr));
 #endif
 
@@ -2776,7 +2776,7 @@ struct vm_struct *remove_vm_area(const void *addr)
 	struct vm_struct *vm;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	addr = (const void *) (gem5_kaslr_mask(addr));
 #endif
 
@@ -2869,7 +2869,7 @@ void vfree_atomic(const void *addr)
 	struct vfree_deferred *p = raw_cpu_ptr(&vfree_deferred);
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	addr = (const void *) (gem5_kaslr_mask(addr));
 #endif
 
@@ -2909,7 +2909,7 @@ void vfree(const void *addr)
 	int i;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	addr = (const void *) (gem5_kaslr_mask(addr));
 #endif
 
@@ -2966,7 +2966,7 @@ void vunmap(const void *addr)
 	struct vm_struct *vm;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	addr = (const void *) (gem5_kaslr_mask(addr));
 #endif
 
@@ -3346,7 +3346,7 @@ void *__vmalloc_node_range(unsigned long size, unsigned long align,
 			pgprot_t prot, unsigned long vm_flags, int node,
 			const void *caller)
 {
-	// [Shixin] I think we do not need mask here!
+	// [Oreo] I think we do not need mask here!
 	struct vm_struct *area;
 	void *ret;
 	kasan_vmalloc_flags_t kasan_flags = KASAN_VMALLOC_NONE;
@@ -3857,7 +3857,7 @@ long vread_iter(struct iov_iter *iter, const char *addr, size_t count)
 	size_t n, size, flags, remains;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	addr = (const char *) (gem5_kaslr_mask(addr));
 #endif
 
@@ -3973,7 +3973,7 @@ int remap_vmalloc_range_partial(struct vm_area_struct *vma, unsigned long uaddr,
 	unsigned long end_index;
 
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
-	// [Shixin] Use masked address here!
+	// [Oreo] Use masked address here!
 	kaddr = (void *) (gem5_kaslr_mask(kaddr));
 #endif
 

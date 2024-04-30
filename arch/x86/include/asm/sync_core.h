@@ -63,7 +63,7 @@ static inline void sync_core(void)
 	 * The SERIALIZE instruction is the most straightforward way to
 	 * do this, but it is not universally available.
 	 */
-    // [Shixin] This introduces altered branches between serialize inst and the modified inst,
+    // [Oreo] This introduces altered branches between serialize inst and the modified inst,
     //  since gem5 execute rep mov one by one (not atomic for 5 bytes), the branch is overwritten
     //  partially and causes an error in gem5.
     // NOTE: rep moves at most 64 byte at one time.

@@ -939,7 +939,7 @@ static long do_get_mempolicy(int *policy, nodemask_t *nmask,
 	struct vm_area_struct *vma = NULL;
 	struct mempolicy *pol = current->mempolicy, *pol_refcount = NULL;
 
-    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // [Oreo] Remove random non-canonical bits of user ASLR protection
     unsigned long unmasked_addr = addr;
     addr = gem5_aslr_remove_rand_offset(addr);
 
@@ -1283,7 +1283,7 @@ static long do_mbind(unsigned long start, unsigned long len,
 	int ret;
 	LIST_HEAD(pagelist);
 
-    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // [Oreo] Remove random non-canonical bits of user ASLR protection
     unsigned long unmasked_start = start;
     start = gem5_aslr_remove_rand_offset(start);
 
@@ -1513,7 +1513,7 @@ static long kernel_mbind(unsigned long start, unsigned long len,
 
 	start = untagged_addr(start);
 
-    // [Shixin] Applying mask and check delta is done in do_mbind
+    // [Oreo] Applying mask and check delta is done in do_mbind
 
 	err = sanitize_mpol_flags(&lmode, &mode_flags);
 	if (err)
@@ -1535,7 +1535,7 @@ SYSCALL_DEFINE4(set_mempolicy_home_node, unsigned long, start, unsigned long, le
 	unsigned long end;
 	int err = -ENOENT;
 
-    // [Shixin] Remove random non-canonical bits of user ASLR protection
+    // [Oreo] Remove random non-canonical bits of user ASLR protection
     unsigned long unmasked_start = start;
     start = gem5_aslr_remove_rand_offset(start);
 
@@ -1749,7 +1749,7 @@ static int kernel_get_mempolicy(int __user *policy,
 
 	addr = untagged_addr(addr);
 
-    // [Shixin] Applying mask and checking delta is done in do_get_mempolicy
+    // [Oreo] Applying mask and checking delta is done in do_get_mempolicy
 
 	err = do_get_mempolicy(&pval, &nodes, addr, flags);
 

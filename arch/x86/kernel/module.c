@@ -39,7 +39,7 @@ do {							\
 #ifdef CONFIG_RANDOMIZE_BASE
 static unsigned long module_load_offset;
 
-// [Shixin] A dirty way to pass ASLR delta via boot parameters for fast test
+// [Oreo] A dirty way to pass ASLR delta via boot parameters for fast test
 unsigned long gem5_module_high_delta = 0;
 void set_gem5_module_high_delta(unsigned long v) {
     gem5_module_high_delta = v;

@@ -70,8 +70,10 @@
 
 #ifdef CONFIG_GEM5_KASLR_PROTECTION_HIGH
 #ifdef CONFIG_GEM5_KASLR_MODULE_PROTECTION_HIGH
+#define text_module_mask(addr) \
+    ((-(!!((addr ^ _AC(0xffffff8000000000, UL)) >> 39) | ! ((addr ^ _AC(0xfffffff000000000, UL)) >> 36) | ! ((addr ^ _AC(0xffffffef00000000, UL)) >> 32))) | GEM5_KASLR_MODULE_CLEAR_MASK)
 /* Protect text + module */
-#define gem5_kaslr_mask(addr) (((uint64_t) addr) & text_mask((uint64_t) addr) & module_mask((uint64_t) addr))
+#define gem5_kaslr_mask(addr) (((uint64_t) addr) & text_module_mask((uint64_t) addr))
 #else
 /* Protect text */
 #define gem5_kaslr_mask(addr) (((uint64_t) addr) & text_mask((uint64_t) addr))

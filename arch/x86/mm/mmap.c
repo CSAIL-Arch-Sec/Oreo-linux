@@ -26,11 +26,30 @@
 
 // [Oreo] A dirty way to pass ASLR delta via boot parameters for fast test
 unsigned long long gem5_user_high_offset = 0;
+int gem5_user_random_offset = 0;
 void set_gem5_user_high_offset(unsigned long v) {
-    gem5_user_high_offset = gem5_aslr_get_offset(((unsigned long long) v));
-    pr_info("@@@ gem5_user_high_offset %llx %lx\n", gem5_user_high_offset, v);
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+    if (v == 1 << (CONFIG_GEM5_ASLR_MAX_BIT - CONFIG_GEM5_ASLR_ALIGN_BIT)) {
+        gem5_user_random_offset = 1;
+        pr_info("@@@ gem5_user_high_offset allow random user high delta\n");
+    } else {
+        gem5_user_high_offset = gem5_aslr_get_offset(((unsigned long long) v));
+        pr_info("@@@ gem5_user_high_offset %llx %lx\n", gem5_user_high_offset, v);
+    }
+#endif
 }
 EXPORT_SYMBOL(set_gem5_user_high_offset);
+unsigned long get_gem5_user_high_offset(void) {
+#ifdef CONFIG_GEM5_ASLR_PROTECTION_HIGH
+    if (gem5_user_random_offset) {
+        return gem5_aslr_get_offset(get_random_long());
+    } else {
+        return gem5_user_high_offset;
+    }
+#else
+    return 0;
+#endif
+}
 
 struct va_alignment __read_mostly va_align = {
 	.flags = -1,

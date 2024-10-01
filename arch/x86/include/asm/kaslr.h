@@ -17,5 +17,6 @@ extern unsigned long long gem5_user_high_offset;
 
 void set_gem5_module_high_delta(unsigned long v);
 void set_gem5_user_high_offset(unsigned long v);
+unsigned long get_gem5_user_high_offset(void);
 
 #endif

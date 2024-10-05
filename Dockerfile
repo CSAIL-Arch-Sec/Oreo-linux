@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.9-bookworm
+FROM python:3.12-bookworm
 
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && \
@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/root/.cache poetry install
 
 RUN git config --global --add safe.directory '*'
 
-RUN ln -s /usr/local/bin/python3.9 /usr/bin/python3.9
+RUN ln -s /usr/local/bin/python3.12 /usr/bin/python3.12
 # TODO: Download a linux image somewhere
 
 #RUN poetry init

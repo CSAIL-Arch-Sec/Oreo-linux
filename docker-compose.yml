@@ -4,7 +4,7 @@ services:
     build: .
     volumes:
       - .:/root/linux
-      - ../gem5-new/:/root/gem5
+      - ../gem5/:/root/gem5
       - ../experiments/:/root/experiments
     stdin_open: true # docker run -i
     tty: true        # docker run -t
